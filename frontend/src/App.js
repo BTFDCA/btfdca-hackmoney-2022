@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 
 async function createDCAFlow() {
-  // TODO: missing parameters (the flowrate, the target contract)
+  // TODO: missing parameters (amount, sourceToken, targetToken, cadence)
   console.log("Creating the DCA flow");
 
   const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -17,21 +17,24 @@ async function createDCAFlow() {
   });
   console.log("got the sf object", sf);
 
-  // TODO: I think this is going to be a super app
+  // TODO: change to sourceToken
   // const DAIxContract = await sf.loadSuperToken("fDAIx");
   // const DAIx = DAIxContract.address;
 
-  // TODO: is constant flow agreement the right agreement for DCA? or is there some other agreement?
+  // TODO: convert the amount into flowRate based on cadence and amount
+  // const amountInWei = ethers.BigNumber.from(amount);
+  // const monthlyAmount = ethers.utils.formatEther(amountInWei.toString());
+  // const calculatedFlowRate = monthlyAmount * 3600 * 24 * 30;
+
   // try {
   //   const createFlowOperation = sf.cfaV1.createFlow({
-  //     receiver: recipient,
-  //     flowRate: flowRate,
-  //     superToken: DAIx,
-  //     // userData?: string
+  //     receiver: recipient,  // TODO: change to superapp's address
+  //     flowRate: flowRate,  // calculate flowRate based on amount and cadence
+  //     superToken: DAIx,  // TODO: sourceToken
+  //     userData?: string  // TODO: wrap args
   //   });
 
   //   console.log("Creating your stream...");
-
   //   const result = await createFlowOperation.exec(signer);
   //   console.log(result);
 
@@ -107,11 +110,6 @@ function App() {
     console.log(
       `setup an agreement to trade ${buyAmount} ${srcToken} for ${targetToken} every ${buyCadence}`
     );
-    // TODO: convert the input values into calculation amounts
-    // const amountInWei = ethers.BigNumber.from(amount);
-    // const monthlyAmount = ethers.utils.formatEther(amountInWei.toString());
-    // const calculatedFlowRate = monthlyAmount * 3600 * 24 * 30;
-
     // TODO: perform validations - i.e. check if the wallet has the funds etc
     // TODO: disable the button and show some info msg
 
