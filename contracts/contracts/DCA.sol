@@ -82,26 +82,68 @@ contract DCA is SuperAppBase {
     /**************************************************************************
      * DCA logic
      *************************************************************************/
-    // struct DcaSetup {
-    //     string sourceToken;
-    //     uint256 amount;
-    //     string targetToken;
-    //     uint8 cadenceInDays;
-    // }
-    // struct DcaBalance {
-    //     uint256 balance;
-    //     uint256 lastBuyTimestamp;
-    // }
+    struct DcaSetup {
+        address investor;
+        string sourceToken;
+        uint256 amount;
+        string targetToken;
+        uint8 cadenceInDays;
+        uint256 lastBuyTimestamp;
+    }
 
     // // sourceToken: targetToken: address: DcaSetup
     // mapping(string => mapping(string => mapping(address => DcaSetup))) tokenAddressSetups;
-    // // address: DcaBalance
-    // mapping(address => DcaBalance) addressBalances;
+    DcaSetup[] private dailySetups;
+    DcaSetup[] private weeklySetups;
+    DcaSetup[] private monthlySetups;
 
-    // // Invoked by Gelato to trigger buy orders
-    // function buyTokens() {
-    //     // find the addresses that can buy
-    // }
+    function _buyAndDistribute(DcaSetup[] memory arr) private {
+        // TODO: how are the tx fees paid? is it paid by the caller of the function, i.e. Gelato?
+
+        // TODO: determine if this array is needed, and find a better pattern
+        DcaSetup[] memory investors = new DcaSetup[](arr.length);
+        uint256 amountToBuy;
+        uint256 amountReceived;
+
+        // find the investors, and how much to buy
+        // TODO: this assumes a single source token to single destination token
+        for (uint256 i = 0; i < arr.length; i++) {
+            DcaSetup memory s = arr[i];
+            // TODO: adjust the time calculation, maybe use blocks
+            // TODO: this assumes that the full amount has been transferred, since the flow should respect the cadence
+            if (block.timestamp >= s.lastBuyTimestamp + s.cadenceInDays) {
+                investors[i] = s;
+                amountToBuy += s.amount;
+            }
+        }
+
+        // TODO: do we need to assert something?
+        // TODO: take 1 bps out of the amount
+
+        // TODO: >= MINIMUM_AMOUNT_TO_BUY = 1 matic or something
+        if (amountToBuy > 0) {
+            // TODO: ISwapRouter public immutable swapRouter
+            // TODO: do the swap
+            // TODO: safe transfer and approve
+            // TODO: ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({...})
+            // TODO: uint256 amountReceived = swapRouter.exactInputSingle(params)
+        }
+
+        // TODO: >= MINIMUM_AMOUNT_RECEIVED = something
+        if (amountReceived > 0) {
+            // TODO: redistribute to investors
+            // TODO: calculate the share of each investor
+            // TODO: _idaDistribute(...)
+        }
+    }
+
+    // Invoked by Gelato to trigger buy orders
+
+    function buyTokensDaily() external {}
+
+    function buyTokensWeekly() external {}
+
+    function buyTokensMonthly() external {}
 
     // TODO: send tokens back to buyers by calling the IDA
     // https://docs.superfluid.finance/superfluid/protocol-developers/super-apps/super-app-callbacks/calling-agreements-in-super-apps
@@ -160,6 +202,8 @@ contract DCA is SuperAppBase {
     //     returns (bytes memory newCtx)
     // {
     //     // TODO: TBI
+    // create a setup entry for this address
+    // add address to the setups
 
     //     // decode Context - store full context as uData variable for easy visualization purposes
     //     ISuperfluid.Context memory decompiledContext = _host.decodeCtx(_ctx);
@@ -275,6 +319,8 @@ contract DCA is SuperAppBase {
     /**************************************************************************
      * IDA logic
      *************************************************************************/
+
+    // https://docs.superfluid.finance/superfluid/protocol-developers/solidity-examples/solidity-libraries/idav1-library
 
     // https://github.com/Ricochet-Exchange/ricochet-protocol/blob/59124ded777eee9cc2d4bff24a11b0f81f80a732/contracts/REXMarket.sol#L507
     // /// @dev Distributes `_distAmount` amount of `_distToken` token among all IDA index subscribers
