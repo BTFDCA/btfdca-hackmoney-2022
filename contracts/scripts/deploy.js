@@ -1,25 +1,69 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// When running the script with `npx hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
 
+const { Framework } = require("@superfluid-finance/sdk-core");
+const { ethers, web3 } = require("hardhat");
+// const daiABI = require("../abis/fDAIABI");
+
+console.log("............", web3);
+
+const deployFramework = require("@superfluid-finance/ethereum-contracts/scripts/deploy-framework");
+const deployTestToken = require("@superfluid-finance/ethereum-contracts/scripts/deploy-test-token");
+const deploySuperToken = require("@superfluid-finance/ethereum-contracts/scripts/deploy-super-token");
+
+const errorHandler = (err) => {
+  if (err) throw err;
+};
+
 async function main() {
-  // Hardhat always runs the compile task when running scripts with its command
-  // line interface.
-  //
-  // If this script is run directly using `node` you may want to call compile
-  // manually to make sure everything is compiled
-  // await hre.run('compile');
+  const provider = web3;
+  const accounts = await ethers.getSigners();
 
-  // We get the contract to deploy
-  const Greeter = await hre.ethers.getContractFactory("Greeter");
-  const greeter = await Greeter.deploy("Hello, Hardhat!");
+  // deploy the framework
+  await deployFramework(errorHandler, {
+    web3,
+    from: accounts[0].address,
+  });
 
-  await greeter.deployed();
+  // deploy a fake erc20 token
+  await deployTestToken(errorHandler, [":", "fDAI"], {
+    web3,
+    from: accounts[0].address,
+  });
+  // deploy a fake erc20 wrapper super token around the fDAI token
+  await deploySuperToken(errorHandler, [":", "fDAI"], {
+    web3,
+    from: accounts[0].address,
+  });
 
-  console.log("Greeter deployed to:", greeter.address);
+  // initialize the superfluid framework...put custom and web3 only bc we are using hardhat locally
+  const sf = await Framework.create({
+    networkName: "custom",
+    provider,
+    dataMode: "WEB3_ONLY",
+    resolverAddress: process.env.RESOLVER_ADDRESS, // this is how you get the resolver address
+    protocolReleaseVersion: "test",
+  });
+
+  // let superSigner = await sf.createSigner({
+  //   signer: accounts[0],
+  //   provider: provider,
+  // });
+  // use the framework to get the super toen
+  const daix = await sf.loadSuperToken("fDAIx");
+
+  // get the contract object for the erc20 token
+  // const daiAddress = daix.underlyingToken.address;
+  // const dai = new ethers.Contract(daiAddress, daiABI, accounts[0]);
+
+  const DCA = await hre.ethers.getContractFactory("DCA");
+  const dca = await DCA.deploy(
+    sf.settings.config.hostAddress,
+    sf.settings.config.cfaV1Address,
+    sf.settings.config.idaV1Address,
+    daix.address
+  );
+  await dca.deployed();
+  console.log("DCA deployed to:", dca.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -1,7 +1,8 @@
 import { Framework } from "@superfluid-finance/sdk-core";
-import { ethers } from "ethers";
+import { constants, ethers } from "ethers";
 import { useEffect, useState } from "react";
 import "./App.css";
+import { ADDRESS_SUPERFLUID_RESOLVER } from "./constants";
 
 async function createDCAFlow() {
   // TODO: missing parameters (amount, sourceToken, targetToken, cadence)
@@ -14,6 +15,9 @@ async function createDCAFlow() {
   const sf = await Framework.create({
     chainId: Number(chainId),
     provider: provider,
+    dataMode: "WEB3_ONLY",
+    resolverAddress: ADDRESS_SUPERFLUID_RESOLVER,
+    protocolReleaseVersion: "test",
   });
   console.log("got the sf object", sf);
 
