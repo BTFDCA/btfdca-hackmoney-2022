@@ -1,19 +1,19 @@
 import { Framework } from "@superfluid-finance/sdk-core";
 import { ethers } from "ethers";
 import { useEffect, useState } from "react";
-import "./App.css";
 import { ADDRESSES } from "./constants";
 
-async function createDCAFlow(sourceToken) {
-  // TODO: missing parameters (amount, sourceToken, targetToken, cadence)
-  console.log("Creating the DCA flow");
+import "./App.css";
 
+async function createDCAFlow(amount, sourceToken, targetToken, cadenceInDays) {
+  console.log("Creating the DCA flow");
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const signer = provider.getSigner();
 
   const chainId = await window.ethereum.request({ method: "eth_chainId" });
-  // TODO: get addresses for this chain id
-
+  console.log(`connected to chain ${chainId}`);
+  // TODO: get addresses for this chain id (resolver)
+  // TODO: if test network, send test params to create, otherwise don't
   const sf = await Framework.create({
     chainId: Number(chainId),
     provider: provider,
@@ -23,44 +23,30 @@ async function createDCAFlow(sourceToken) {
   });
   console.log("got the sf object", sf);
 
-  // TODO: change to sourceToken
-  const DAIxContract = await sf.loadSuperToken(sourceToken);
-  const DAIx = DAIxContract.address;
-  console.log("xxxxxxxxxxxxx dai", DAIx);
+  // TODO: assert source token exists in this network
+  const srcTokenContract = await sf.loadSuperToken(sourceToken);
+  const srcTokenAddress = srcTokenContract.address;
 
-  // TODO: convert the amount into flowRate based on cadence and amount
-  // const amountInWei = ethers.BigNumber.from(amount);
-  // const monthlyAmount = ethers.utils.formatEther(amountInWei.toString());
-  // const calculatedFlowRate = monthlyAmount * 3600 * 24 * 30;
+  // the amount of source token per second to be streamed from the user to the contract
+  const monthlyBuyAmount = amount * (30 / cadenceInDays);
+  const flowRateInEth = monthlyBuyAmount / 3600 / 24 / 30;
+  const flowRateInWei = ethers.utils.parseEther(flowRateInEth.toFixed(18));
+  console.log("flow rate:", flowRateInWei.toString());
 
-  // try {
-  //   const createFlowOperation = sf.cfaV1.createFlow({
-  //     receiver: recipient,  // TODO: change to superapp's address
-  //     flowRate: flowRate,  // calculate flowRate based on amount and cadence
-  //     superToken: DAIx,  // TODO: sourceToken
-  //     userData?: string  // TODO: wrap args
-  //   });
+  // start streaming the tokens from the user to the dca superapp contract
+  try {
+    const createFlowOperation = sf.cfaV1.createFlow({
+      receiver: ADDRESSES.LOCAL.ADDRESS_DCA_SUPERAPP,
+      flowRate: flowRateInWei.toString(),
+      superToken: srcTokenAddress,
+      // userData?: string  // TODO: wrap args
+    });
 
-  //   console.log("Creating your stream...");
-  //   const result = await createFlowOperation.exec(signer);
-  //   console.log(result);
-
-  //   console.log(
-  //     `Congrats - you've just created a money stream!
-  //   View Your Stream At: https://app.superfluid.finance/dashboard/${recipient}
-  //   Network: Kovan
-  //   Super Token: DAIx
-  //   Sender: 0xDCB45e4f6762C3D7C61a00e96Fb94ADb7Cf27721
-  //   Receiver: ${recipient},
-  //   FlowRate: ${flowRate}
-  //   `
-  //   );
-  // } catch (error) {
-  //   console.log(
-  //     "Hmmm, your transaction threw an error. Make sure that this stream does not already exist, and that you've entered a valid Ethereum address!"
-  //   );
-  //   console.error(error);
-  // }
+    const result = await createFlowOperation.exec(signer);
+    console.log("stream created!", result);
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 // TODO: these values should be loaded based on the network
@@ -76,13 +62,17 @@ const OPTIONS_TARGET_TOKEN = [
 ];
 
 const OPTIONS_CADENCE = [
-  { label: "month", value: "month" },
-  { label: "week", value: "week" },
-  { label: "day", value: "day" },
+  { label: "month", value: "30" },
+  { label: "week", value: "7" },
+  { label: "day", value: "1" },
 ];
 
 const renderOptions = (options) => {
-  return options.map((opt) => <option value={opt.value}>{opt.label}</option>);
+  return options.map((opt) => (
+    <option key={opt.label} value={opt.value}>
+      {opt.label}
+    </option>
+  ));
 };
 
 function App() {
@@ -144,7 +134,7 @@ function App() {
     // TODO: disable the button and show some info msg
 
     // TODO: do stuff - create the superfluid stream, etc
-    createDCAFlow(srcToken);
+    createDCAFlow(buyAmount, srcToken, targetToken, buyCadence);
 
     // TODO:
     // redirect the user somewhere if DCA is set up
@@ -167,6 +157,7 @@ function App() {
       <div className="dcaWrapper">
         <span>I want to buy</span>
         <span>
+          {/* TODO: cannot be negative */}
           <input
             type="number"
             step="100"
