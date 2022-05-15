@@ -38,3 +38,7 @@
 .alertWrapper {
   margin-bottom: 2rem;
 }
+
+.dropdown {
+  text-transform: uppercase;
+}

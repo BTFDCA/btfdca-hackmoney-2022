@@ -1,10 +1,10 @@
 import { Framework } from "@superfluid-finance/sdk-core";
-import { constants, ethers } from "ethers";
+import { ethers } from "ethers";
 import { useEffect, useState } from "react";
 import "./App.css";
-import { ADDRESS_SUPERFLUID_RESOLVER } from "./constants";
+import { ADDRESSES } from "./constants";
 
-async function createDCAFlow() {
+async function createDCAFlow(sourceToken) {
   // TODO: missing parameters (amount, sourceToken, targetToken, cadence)
   console.log("Creating the DCA flow");
 
@@ -12,18 +12,21 @@ async function createDCAFlow() {
   const signer = provider.getSigner();
 
   const chainId = await window.ethereum.request({ method: "eth_chainId" });
+  // TODO: get addresses for this chain id
+
   const sf = await Framework.create({
     chainId: Number(chainId),
     provider: provider,
     dataMode: "WEB3_ONLY",
-    resolverAddress: ADDRESS_SUPERFLUID_RESOLVER,
+    resolverAddress: ADDRESSES.LOCAL.ADDRESS_SUPERFLUID_RESOLVER,
     protocolReleaseVersion: "test",
   });
   console.log("got the sf object", sf);
 
   // TODO: change to sourceToken
-  // const DAIxContract = await sf.loadSuperToken("fDAIx");
-  // const DAIx = DAIxContract.address;
+  const DAIxContract = await sf.loadSuperToken(sourceToken);
+  const DAIx = DAIxContract.address;
+  console.log("xxxxxxxxxxxxx dai", DAIx);
 
   // TODO: convert the amount into flowRate based on cadence and amount
   // const amountInWei = ethers.BigNumber.from(amount);
@@ -60,13 +63,35 @@ async function createDCAFlow() {
   // }
 }
 
+// TODO: these values should be loaded based on the network
+// i.e. getAvailableSourceTokens(chainId)
+const OPTIONS_SOURCE_TOKEN = [
+  { label: "DAI", value: "fDAIx" },
+  { label: "USDC", value: "fUSDCx" },
+];
+
+const OPTIONS_TARGET_TOKEN = [
+  { label: "BTC", value: "BTC" },
+  { label: "ETH", value: "ETH" },
+];
+
+const OPTIONS_CADENCE = [
+  { label: "month", value: "month" },
+  { label: "week", value: "week" },
+  { label: "day", value: "day" },
+];
+
+const renderOptions = (options) => {
+  return options.map((opt) => <option value={opt.value}>{opt.label}</option>);
+};
+
 function App() {
   const [currentAccount, setCurrentAccount] = useState("");
   // TODO: set default values (following the order from the dropdowns)
-  const [buyAmount, setBuyAmount] = useState();
-  const [srcToken, setSourceToken] = useState();
-  const [targetToken, setTargetToken] = useState();
-  const [buyCadence, setBuyCadence] = useState();
+  const [buyAmount, setBuyAmount] = useState(0);
+  const [srcToken, setSourceToken] = useState(OPTIONS_SOURCE_TOKEN[0].value);
+  const [targetToken, setTargetToken] = useState(OPTIONS_TARGET_TOKEN[0].value);
+  const [buyCadence, setBuyCadence] = useState(OPTIONS_CADENCE[0].value);
 
   const connectWallet = async () => {
     try {
@@ -115,10 +140,11 @@ function App() {
       `setup an agreement to trade ${buyAmount} ${srcToken} for ${targetToken} every ${buyCadence}`
     );
     // TODO: perform validations - i.e. check if the wallet has the funds etc
+    // if not srcToken
     // TODO: disable the button and show some info msg
 
     // TODO: do stuff - create the superfluid stream, etc
-    createDCAFlow();
+    createDCAFlow(srcToken);
 
     // TODO:
     // redirect the user somewhere if DCA is set up
@@ -149,24 +175,29 @@ function App() {
           />
         </span>
         <span>
-          <select onChange={(e) => setSourceToken(e.target.value)}>
-            <option value="dai">DAI</option>
-            <option value="usdc">USDC</option>
+          <select
+            className="dropdown"
+            onChange={(e) => setSourceToken(e.target.value)}
+          >
+            {renderOptions(OPTIONS_SOURCE_TOKEN)}
           </select>
         </span>
         <span>worth of</span>
         <span>
-          <select onChange={(e) => setTargetToken(e.target.value)}>
-            <option value="wbtc">wBTC</option>
-            <option value="weth">wETH</option>
+          <select
+            className="dropdown"
+            onChange={(e) => setTargetToken(e.target.value)}
+          >
+            {renderOptions(OPTIONS_TARGET_TOKEN)}
           </select>
         </span>
         <span>every</span>
         <span>
-          <select onChange={(e) => setBuyCadence(e.target.value)}>
-            <option value="month">month</option>
-            <option value="week">week</option>
-            <option value="day">day</option>
+          <select
+            className="dropdown"
+            onChange={(e) => setBuyCadence(e.target.value)}
+          >
+            {renderOptions(OPTIONS_CADENCE)}
           </select>
         </span>
         <span>.</span>
