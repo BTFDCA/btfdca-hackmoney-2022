@@ -2,7 +2,7 @@ const hre = require("hardhat");
 
 const { Framework } = require("@superfluid-finance/sdk-core");
 const { ethers, web3 } = require("hardhat");
-// const daiABI = require("../abis/fDAIABI");
+const daiABI = require("../abis/fDAIABI");
 
 const deployFramework = require("@superfluid-finance/ethereum-contracts/scripts/deploy-framework");
 const deployTestToken = require("@superfluid-finance/ethereum-contracts/scripts/deploy-test-token");
@@ -50,8 +50,8 @@ async function main() {
   const daix = await sf.loadSuperToken("fDAIx");
 
   // get the contract object for the erc20 token
-  // const daiAddress = daix.underlyingToken.address;
-  // const dai = new ethers.Contract(daiAddress, daiABI, accounts[0]);
+  const daiAddress = daix.underlyingToken.address;
+  const dai = new ethers.Contract(daiAddress, daiABI, accounts[0]);
 
   const DCA = await hre.ethers.getContractFactory("DCA");
   const dca = await DCA.deploy(
@@ -62,6 +62,27 @@ async function main() {
   );
   await dca.deployed();
   console.log("DCA deployed to:", dca.address);
+
+  // mint daix tokens to account[0]
+  await dai
+    .connect(accounts[0])
+    .mint(accounts[0].address, ethers.utils.parseEther("1000"));
+
+  await dai
+    .connect(accounts[0])
+    .approve(daix.address, ethers.utils.parseEther("1000"));
+
+  const daixUpgradeOperation = daix.upgrade({
+    amount: ethers.utils.parseEther("1000"),
+  });
+
+  await daixUpgradeOperation.exec(accounts[0]);
+
+  const daiBal = await daix.balanceOf({
+    account: accounts[0].address,
+    providerOrSigner: accounts[0],
+  });
+  console.log("daix bal for acct 0: ", daiBal);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
