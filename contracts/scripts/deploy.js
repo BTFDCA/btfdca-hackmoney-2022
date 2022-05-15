@@ -58,7 +58,8 @@ async function main() {
     sf.settings.config.hostAddress,
     sf.settings.config.cfaV1Address,
     sf.settings.config.idaV1Address,
-    daix.address
+    // daix.address,
+    ""
   );
   await dca.deployed();
   console.log("DCA deployed to:", dca.address);

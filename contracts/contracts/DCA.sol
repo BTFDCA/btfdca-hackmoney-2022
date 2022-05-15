@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
 import {ISuperAgreement, SuperAppDefinitions, ISuperfluid, ISuperToken} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 import {IConstantFlowAgreementV1} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IConstantFlowAgreementV1.sol";
 import {IInstantDistributionAgreementV1} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IInstantDistributionAgreementV1.sol";
@@ -31,40 +32,40 @@ contract DCA is SuperAppBase {
     ISuperfluid public _host;
     IConstantFlowAgreementV1 private _cfa;
     IInstantDistributionAgreementV1 private _ida;
-    ISuperToken private _acceptedToken;
-    ISuperfluid.Context public uData;
-    string public userData;
 
     constructor(
         ISuperfluid host,
         IConstantFlowAgreementV1 cfa,
         IInstantDistributionAgreementV1 ida,
-        ISuperToken acceptedToken
+        // ISuperToken[] memory acceptedSourceTokens,
+        // ISuperToken[] memory acceptedTargetTokens,
+        string memory registrationKey
     ) {
         assert(address(host) != address(0));
         assert(address(cfa) != address(0));
-        assert(address(acceptedToken) != address(0));
+        assert(address(ida) != address(0));
 
         _host = host;
         _cfa = cfa;
         _ida = ida;
-        _acceptedToken = acceptedToken;
 
         // TODO: change this to reflect the callbacks that are NOT implemented
         uint256 configWord = SuperAppDefinitions.APP_LEVEL_FINAL |
             SuperAppDefinitions.BEFORE_AGREEMENT_CREATED_NOOP |
-            SuperAppDefinitions.AFTER_AGREEMENT_CREATED_NOOP |
+            // SuperAppDefinitions.AFTER_AGREEMENT_CREATED_NOOP |
             SuperAppDefinitions.BEFORE_AGREEMENT_UPDATED_NOOP |
             SuperAppDefinitions.AFTER_AGREEMENT_UPDATED_NOOP |
-            SuperAppDefinitions.BEFORE_AGREEMENT_TERMINATED_NOOP |
-            SuperAppDefinitions.AFTER_AGREEMENT_TERMINATED_NOOP;
+            SuperAppDefinitions.BEFORE_AGREEMENT_TERMINATED_NOOP; // |
+        // SuperAppDefinitions.AFTER_AGREEMENT_TERMINATED_NOOP;
 
         // TODO: needs a registration key for mainnet
-        // if (bytes(_registrationKey).length > 0) {
-        //     _host.registerAppWithKey(_configWord, _registrationKey);
-        // } else {
-        //     _host.registerApp(configWord);
-        // }
+        if (bytes(registrationKey).length > 0) {
+            _host.registerAppWithKey(configWord, registrationKey);
+        } else {
+            _host.registerApp(configWord);
+        }
+
+        console.log("HELLO FROM CTOR!");
     }
 
     /**************************************************************************
@@ -187,36 +188,51 @@ contract DCA is SuperAppBase {
     //     revert("Unsupported callback - Before Agreement Created");
     // }
 
-    // function afterAgreementCreated(
-    //     ISuperToken _superToken,
-    //     address _agreementClass,
-    //     bytes32, // _agreementId,
-    //     bytes calldata, /*_agreementData*/
-    //     bytes calldata, // _cbdata,
-    //     bytes calldata _ctx
-    // )
-    //     external
-    //     override
-    //     onlyExpected(_superToken, _agreementClass)
-    //     onlyHost
-    //     returns (bytes memory newCtx)
-    // {
-    //     // TODO: TBI
-    // create a setup entry for this address
-    // add address to the setups
+    function afterAgreementCreated(
+        ISuperToken, // _superToken,
+        address, // _agreementClass,
+        bytes32, // _agreementId,
+        bytes calldata, /*_agreementData*/
+        bytes calldata, // _cbdata,
+        bytes calldata _ctx
+    ) external override onlyHost returns (bytes memory) {
+        console.log("HELLO FROM AFTER AGREEMENT CREATED!");
 
-    //     // decode Context - store full context as uData variable for easy visualization purposes
-    //     ISuperfluid.Context memory decompiledContext = _host.decodeCtx(_ctx);
-    //     uData = decompiledContext;
+        ISuperfluid.Context memory decodedContext = _host.decodeCtx(_ctx);
+        console.log("sender:", decodedContext.msgSender);
 
-    //     //set userData variable to decoded value
-    //     //for now, this value is hardcoded as a string - this will be made clear in flow creation scripts within the tutorial
-    //     //this string will serve as a message on an 'NFT billboard' when a flow is created with recipient = tradeableCashflow
-    //     //it will be displayed on a front end for assistance in userData explanation
-    //     userData = abi.decode(decompiledContext.userData, (string));
+        if (decodedContext.userData.length == 0) {
+            // TODO: error
+            console.log("no user data");
+        }
 
-    //     // return _updateOutflow(_ctx);
-    // }
+        // decode user data (src token, amount, target token, cadence)
+        (string memory srcToken, uint256 amount, string memory targetToken, uint8 cadence) = abi.decode(
+            decodedContext.userData,
+            (string, uint256, string, uint8)
+        );
+
+        // create a setup entry for this address
+        DcaSetup memory setup = DcaSetup({
+            investor: decodedContext.msgSender,
+            // TODO: floating points are not accepted in amount
+            amount: amount,
+            sourceToken: srcToken,
+            targetToken: targetToken,
+            cadenceInDays: cadence,
+            lastBuyTimestamp: decodedContext.timestamp // TODO: assert this is now()
+        });
+
+        // add address to the setups
+        if(cadence == 1)
+            dailySetups.push(setup);
+        else if(cadence == 7)
+            weeklySetups.push(setup);
+        else if (cadence == 30)
+            monthlySetups.push(setup);
+
+        return _ctx;
+    }
 
     // function beforeAgreementUpdated(
     //     ISuperToken, /*superToken*/
@@ -275,20 +291,22 @@ contract DCA is SuperAppBase {
     //     revert("Unsupported callback -  Before Agreement Terminated");
     // }
 
-    // function afterAgreementTerminated(
-    //     ISuperToken _superToken,
-    //     address _agreementClass,
-    //     bytes32, //_agreementId,
-    //     bytes calldata, // _agreementData,
-    //     bytes calldata, //_cbdata,
-    //     bytes calldata _ctx
-    // ) external override onlyHost returns (bytes memory newCtx) {
-    //     // According to the app basic law, we should never revert in a termination callback
-    //     if (!_isSameToken(_superToken) || !_isCFAv1(_agreementClass))
-    //         return _ctx;
-    //     userData = "";
-    //     // return _updateOutflow(_ctx);
-    // }
+    function afterAgreementTerminated(
+        ISuperToken, // _superToken,
+        address, // _agreementClass,
+        bytes32, //_agreementId,
+        bytes calldata, // _agreementData,
+        bytes calldata, //_cbdata,
+        bytes calldata _ctx
+    ) external override onlyHost returns (bytes memory) {
+        ISuperfluid.Context memory decodedContext = _host.decodeCtx(_ctx);
+
+        // According to the app basic law, we should never revert in a termination callback
+        // if (!_isSameToken(_superToken) || !_isCFAv1(_agreementClass))
+        //     return _ctx;
+
+        return _ctx;
+    }
 
     // function _isSameToken(ISuperToken superToken) private view returns (bool) {
     //     return address(superToken) == address(_acceptedToken);
@@ -302,13 +320,13 @@ contract DCA is SuperAppBase {
     //         );
     // }
 
-    // modifier onlyHost() {
-    //     require(
-    //         msg.sender == address(_host),
-    //         "RedirectAll: support only one host"
-    //     );
-    //     _;
-    // }
+    modifier onlyHost() {
+        require(
+            msg.sender == address(_host),
+            "RedirectAll: support only one host"
+        );
+        _;
+    }
 
     // modifier onlyExpected(ISuperToken superToken, address agreementClass) {
     //     require(_isSameToken(superToken), "RedirectAll: not accepted token");

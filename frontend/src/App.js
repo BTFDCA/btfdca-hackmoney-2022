@@ -5,7 +5,13 @@ import { ADDRESSES } from "./constants";
 
 import "./App.css";
 
-async function createDCAFlow(amount, sourceToken, targetToken, cadenceInDays) {
+async function createDCAFlow(
+  sender,
+  amount,
+  sourceToken,
+  targetToken,
+  cadenceInDays
+) {
   console.log("Creating the DCA flow");
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const signer = provider.getSigner();
@@ -35,11 +41,17 @@ async function createDCAFlow(amount, sourceToken, targetToken, cadenceInDays) {
 
   // start streaming the tokens from the user to the dca superapp contract
   try {
+    let userData = ethers.utils.defaultAbiCoder.encode(
+      ["string", "uint256", "string", "uint8"],
+      [sourceToken, amount, targetToken, cadenceInDays]
+    );
+    console.log(userData);
+
     const createFlowOperation = sf.cfaV1.createFlow({
       receiver: ADDRESSES.LOCAL.ADDRESS_DCA_SUPERAPP,
       flowRate: flowRateInWei.toString(),
       superToken: srcTokenAddress,
-      // userData?: string  // TODO: wrap args
+      userData: userData,
     });
 
     const result = await createFlowOperation.exec(signer);
@@ -134,7 +146,7 @@ function App() {
     // TODO: disable the button and show some info msg
 
     // TODO: do stuff - create the superfluid stream, etc
-    createDCAFlow(buyAmount, srcToken, targetToken, buyCadence);
+    createDCAFlow(currentAccount, buyAmount, srcToken, targetToken, buyCadence);
 
     // TODO:
     // redirect the user somewhere if DCA is set up
