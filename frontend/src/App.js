@@ -42,8 +42,8 @@ async function createDCAFlow(
   // start streaming the tokens from the user to the dca superapp contract
   try {
     let userData = ethers.utils.defaultAbiCoder.encode(
-      ["string", "uint256", "string", "uint8"],
-      [sourceToken, amount, targetToken, cadenceInDays]
+      ["string", "uint256", "string"],
+      [sourceToken, amount, targetToken]
     );
     console.log(userData);
 
@@ -73,17 +73,17 @@ async function createDCAFlow(
 // i.e. getAvailableSourceTokens(chainId)
 const OPTIONS_SOURCE_TOKEN = [
   { label: "DAI", value: "fDAIx" },
-  { label: "USDC", value: "fUSDCx" },
+  // { label: "USDC", value: "fUSDCx" },
 ];
 
 const OPTIONS_TARGET_TOKEN = [
   { label: "BTC", value: "BTC" },
-  { label: "ETH", value: "ETH" },
+  // { label: "ETH", value: "ETH" },
 ];
 
 const OPTIONS_CADENCE = [
-  { label: "month", value: "30" },
-  { label: "week", value: "7" },
+  // { label: "month", value: "30" },
+  // { label: "week", value: "7" },
   { label: "day", value: "1" },
 ];
 
@@ -180,8 +180,8 @@ function App() {
           {/* TODO: cannot be negative */}
           <input
             type="number"
-            step="100"
-            placeholder="100"
+            step="10"
+            placeholder="10"
             onChange={(e) => setBuyAmount(e.target.value)}
           />
         </span>

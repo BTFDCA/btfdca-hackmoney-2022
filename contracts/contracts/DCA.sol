@@ -82,91 +82,68 @@ contract DCA is SuperAppBase {
      * DCA logic
      *************************************************************************/
     struct DcaSetup {
-        address investor;
-        string sourceToken;
-        uint256 amount;
-        string targetToken;
-        uint8 cadenceInDays;
         uint256 lastBuyTimestamp;
+        uint256 amount;
+        string sourceToken;
+        string targetToken;
     }
 
-    // // sourceToken: targetToken: address: DcaSetup
-    // mapping(string => mapping(string => mapping(address => DcaSetup))) tokenAddressSetups;
-    DcaSetup[] private dailySetups;
-    DcaSetup[] private weeklySetups;
-    DcaSetup[] private monthlySetups;
+    mapping(address => DcaSetup) private _addressSetup;
+    address[] private _investors;
 
-    function buyAndDistribute(DcaSetup[] memory arr) external {
+    // Invoked by Gelato to trigger buy orders
+    function buyAndDistribute()
+        external
+        returns (uint256 inputAmount, uint256 outputAmount)
+    {
         console.log("BTFDCA");
         // TODO: how are the tx fees paid? is it paid by the caller of the function, i.e. Gelato?
 
         // TODO: determine if this array is needed, and find a better pattern
-        DcaSetup[] memory investors = new DcaSetup[](arr.length);
+        address[] memory investors;
         uint256 amountToBuy;
         uint256 amountReceived;
 
-        // find the investors, and how much to buy
-        // TODO: this assumes a single source token to single destination token
-        for (uint256 i = 0; i < arr.length; i++) {
-            DcaSetup memory s = arr[i];
-            // TODO: adjust the time calculation, maybe use blocks
-            // TODO: this assumes that the full amount has been transferred, since the flow should respect the cadence
-            if (block.timestamp >= s.lastBuyTimestamp + s.cadenceInDays) {
-                investors[i] = s;
-                amountToBuy += s.amount;
-                // TODO: update lastBuyTimestamp
-            }
-        }
-        console.log("found the buyoooors");
+        // // find the investors, and how much to buy
+        // // TODO: this assumes a single source token to single destination token
+        // for (uint256 i = 0; i < arr.length; i++) {
+        //     DcaSetup memory s = arr[i];
+        //     // TODO: adjust the time calculation, maybe use blocks
+        //     // TODO: this assumes that the full amount has been transferred, since the flow should respect the cadence
+        //     // timestamps are in seconds + 1 day (24 * 60 * 60)
+        //     if (block.timestamp >= s.lastBuyTimestamp + 51000) {
+        //         investors[i] = s;
+        //         amountToBuy += s.amount;
+        //         // TODO: update lastBuyTimestamp
+        //     }
+        // }
+        // console.log("found the buyoooors");
 
-        // TODO: do we need to assert something?
-        // TODO: take 1 bps out of the amount
+        // // TODO: do we need to assert something?
+        // // TODO: take 1 bps out of the amount
 
-        // TODO: >= MINIMUM_AMOUNT_TO_BUY = 1 matic or something
-        if (amountToBuy > 0) {
-            console.log("buying a big bag!", amountToBuy);
-            // TODO: unwrap the tokenx to token
-            // TODO: ISwapRouter public immutable swapRouter
-            // TODO: do the swap
-            // TODO: safe transfer and approve
-            // TODO: ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({...})
-            // TODO: uint256 amountReceived = swapRouter.exactInputSingle(params)
-        }
+        // // TODO: >= MINIMUM_AMOUNT_TO_BUY = 1 matic or something
+        // if (amountToBuy > 0) {
+        //     console.log("buying a big bag!", amountToBuy);
+        //     // TODO: unwrap the tokenx to token
+        //     // TODO: ISwapRouter public immutable swapRouter
+        //     // TODO: do the swap
+        //     // TODO: safe transfer and approve
+        //     // TODO: ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({...})
+        //     // TODO: uint256 amountReceived = swapRouter.exactInputSingle(params)
+        // }
+        inputAmount = 1;
+        outputAmount = 2;
 
-        // TODO: >= MINIMUM_AMOUNT_RECEIVED = something
-        if (amountReceived > 0) {
-            console.log("LFG!");
-            // TODO: redistribute to investors
-            // TODO: calculate the share of each investor
-            // TODO: _idaDistribute(...)
-        }
+        // // TODO: >= MINIMUM_AMOUNT_RECEIVED = something
+        // if (amountReceived > 0) {
+        //     console.log("LFG!");
+        //     // TODO: redistribute to investors
+        //     // TODO: calculate the share of each investor
+        //     // TODO: _idaDistribute(...)
+        // }
 
-        console.log("byeeeeeoooor");
-    }
-
-    // Invoked by Gelato to trigger buy orders
-
-    function buyTokensDaily() external {}
-
-    function buyTokensWeekly() external {}
-
-    function buyTokensMonthly() external {}
-
-    function getSetups(uint8 cadence) public view returns (uint256) {
-        console.log("someone's calling getSetups with", cadence);
-
-        if(cadence == 1) {
-            console.log("returning daily setups");
-            return dailySetups.length;
-        }
-        else if(cadence == 7) {
-            console.log("returning weekly setups");
-            return weeklySetups.length;
-        }
-        else {
-            console.log("returning monthly setups");
-            return monthlySetups.length;
-        }
+        console.log("byeeeeeoooor", inputAmount, outputAmount);
     }
 
     /**************************************************************************
@@ -197,6 +174,7 @@ contract DCA is SuperAppBase {
         bytes calldata, // _cbdata,
         bytes calldata _ctx
     ) external override onlyHost returns (bytes memory) {
+        // TODO: this logic is for a CFA only - assert agreementClass is CFA
         console.log("HELLO FROM AFTER AGREEMENT CREATED!");
 
         ISuperfluid.Context memory decodedContext = _host.decodeCtx(_ctx);
@@ -207,40 +185,28 @@ contract DCA is SuperAppBase {
             console.log("no user data");
         }
 
-        // decode user data (src token, amount, target token, cadence)
-        (string memory srcToken, uint256 amount, string memory targetToken, uint8 cadence) = abi.decode(
-            decodedContext.userData,
-            (string, uint256, string, uint8)
-        );
+        // decode user data (src token, amount, target token)
+        (
+            string memory srcToken,
+            uint256 amount,
+            string memory targetToken
+        ) = abi.decode(decodedContext.userData, (string, uint256, string));
+
+        // TODO: validations
 
         // create a setup entry for this address
         console.log("creating the setup");
         DcaSetup memory setup = DcaSetup({
-            investor: decodedContext.msgSender,
-            // TODO: floating points are not accepted in amount
-            amount: amount,
-            sourceToken: srcToken,
-            targetToken: targetToken,
-            cadenceInDays: cadence,
+            amount: amount, // TODO: floating points are not accepted in amount
+            sourceToken: srcToken, // TODO: require srcToken to be a valid token
+            targetToken: targetToken, // TODO: require targetToken to be a valid token
             lastBuyTimestamp: decodedContext.timestamp // TODO: assert this is now()
         });
 
-        // add address to the setups
-        if(cadence == 1) {
-            console.log("pushing to daily setups");
-            dailySetups.push(setup);
-        }
-        else if(cadence == 7) {
-            console.log("pushing to weekly setups");
-            weeklySetups.push(setup);
-        }
-        else if (cadence == 30) {
-            console.log("pushing to monthly setups");
-            monthlySetups.push(setup);
-        }
-        else {
-            console.log("uh oh, no push ups");
-        }
+        console.log("current number of investors", _investors.length);
+        _addressSetup[decodedContext.msgSender] = setup;
+        _investors.push(decodedContext.msgSender);
+        console.log("added new setup", _investors.length);
 
         console.log("returning!");
         return _ctx;
@@ -256,8 +222,22 @@ contract DCA is SuperAppBase {
     ) external override onlyHost returns (bytes memory) {
         ISuperfluid.Context memory decodedContext = _host.decodeCtx(_ctx);
 
-        // TODO: find decodedContext.msgSender in the setups and remove it
-        // TODO: return any funds they have
+        DcaSetup memory dca = _addressSetup[decodedContext.msgSender];
+        if (dca.lastBuyTimestamp > 0) {
+            delete _addressSetup[decodedContext.msgSender];
+
+            // iterate, find index, and remove from _investors
+            for (uint8 i = 0; i < _investors.length; i++) {
+                if (_investors[i] == decodedContext.msgSender) {
+                    _investors[i] = _investors[_investors.length - 1];
+                    _investors.pop();
+
+                    break;
+                }
+            }
+
+            // TODO: return any funds they have
+        }
 
         return _ctx;
     }
