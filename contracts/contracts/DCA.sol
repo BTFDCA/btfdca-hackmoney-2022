@@ -49,16 +49,14 @@ contract DCA is SuperAppBase {
         _cfa = cfa;
         _ida = ida;
 
-        // TODO: change this to reflect the callbacks that are NOT implemented
+        // this reflects the callbacks that are NOT implemented
         uint256 configWord = SuperAppDefinitions.APP_LEVEL_FINAL |
             SuperAppDefinitions.BEFORE_AGREEMENT_CREATED_NOOP |
-            // SuperAppDefinitions.AFTER_AGREEMENT_CREATED_NOOP |
             SuperAppDefinitions.BEFORE_AGREEMENT_UPDATED_NOOP |
             SuperAppDefinitions.AFTER_AGREEMENT_UPDATED_NOOP |
-            SuperAppDefinitions.BEFORE_AGREEMENT_TERMINATED_NOOP; // |
-        // SuperAppDefinitions.AFTER_AGREEMENT_TERMINATED_NOOP;
+            SuperAppDefinitions.BEFORE_AGREEMENT_TERMINATED_NOOP;
 
-        // TODO: needs a registration key for mainnet
+        // needs a registration key for mainnet
         if (bytes(registrationKey).length > 0) {
             _host.registerAppWithKey(configWord, registrationKey);
         } else {
@@ -98,7 +96,7 @@ contract DCA is SuperAppBase {
     DcaSetup[] private weeklySetups;
     DcaSetup[] private monthlySetups;
 
-    function _buyAndDistribute(DcaSetup[] memory arr) private {
+    function buyAndDistribute(DcaSetup[] memory arr) external {
         // TODO: how are the tx fees paid? is it paid by the caller of the function, i.e. Gelato?
 
         // TODO: determine if this array is needed, and find a better pattern
@@ -115,6 +113,7 @@ contract DCA is SuperAppBase {
             if (block.timestamp >= s.lastBuyTimestamp + s.cadenceInDays) {
                 investors[i] = s;
                 amountToBuy += s.amount;
+                // TODO: update lastBuyTimestamp
             }
         }
 
@@ -123,6 +122,7 @@ contract DCA is SuperAppBase {
 
         // TODO: >= MINIMUM_AMOUNT_TO_BUY = 1 matic or something
         if (amountToBuy > 0) {
+            // TODO: unwrap the tokenx to token
             // TODO: ISwapRouter public immutable swapRouter
             // TODO: do the swap
             // TODO: safe transfer and approve
@@ -168,25 +168,6 @@ contract DCA is SuperAppBase {
         - Save the variable to state inside of the afterAgreement callback
         - Make sure that you have an implementation for both the beforeAgreement and afterAgreement callbacks
     */
-
-    // function beforeAgreementCreated(
-    //     ISuperToken, /*superToken*/
-    //     address, /*agreementClass*/
-    //     bytes32, /*agreementId*/
-    //     bytes calldata, /*agreementData*/
-    //     bytes calldata /*ctx*/
-    // )
-    //     external
-    //     view
-    //     virtual
-    //     override
-    //     returns (
-    //         bytes memory /*cbdata*/
-    //     )
-    // {
-    //     // TODO: TBI
-    //     revert("Unsupported callback - Before Agreement Created");
-    // }
 
     function afterAgreementCreated(
         ISuperToken, // _superToken,
@@ -234,63 +215,6 @@ contract DCA is SuperAppBase {
         return _ctx;
     }
 
-    // function beforeAgreementUpdated(
-    //     ISuperToken, /*superToken*/
-    //     address, /*agreementClass*/
-    //     bytes32, /*agreementId*/
-    //     bytes calldata, /*agreementData*/
-    //     bytes calldata /*ctx*/
-    // )
-    //     external
-    //     view
-    //     virtual
-    //     override
-    //     returns (
-    //         bytes memory /*cbdata*/
-    //     )
-    // {
-    //     revert("Unsupported callback - Before Agreement updated");
-    // }
-
-    // function afterAgreementUpdated(
-    //     ISuperToken _superToken,
-    //     address _agreementClass,
-    //     bytes32, //_agreementId,
-    //     bytes calldata, /*_agreementData*/
-    //     bytes calldata, //_cbdata,
-    //     bytes calldata _ctx
-    // )
-    //     external
-    //     override
-    //     onlyExpected(_superToken, _agreementClass)
-    //     onlyHost
-    //     returns (bytes memory newCtx)
-    // {
-    //     ISuperfluid.Context memory decodedContext = _host.decodeCtx(_ctx);
-    //     uData = decodedContext;
-    //     userData = abi.decode(decodedContext.userData, (string));
-
-    //     // return _updateOutflow(_ctx);
-    // }
-
-    // function beforeAgreementTerminated(
-    //     ISuperToken, /*superToken*/
-    //     address, /*agreementClass*/
-    //     bytes32, /*agreementId*/
-    //     bytes calldata, /*agreementData*/
-    //     bytes calldata /*ctx*/
-    // )
-    //     external
-    //     view
-    //     virtual
-    //     override
-    //     returns (
-    //         bytes memory /*cbdata*/
-    //     )
-    // {
-    //     revert("Unsupported callback -  Before Agreement Terminated");
-    // }
-
     function afterAgreementTerminated(
         ISuperToken, // _superToken,
         address, // _agreementClass,
@@ -301,9 +225,8 @@ contract DCA is SuperAppBase {
     ) external override onlyHost returns (bytes memory) {
         ISuperfluid.Context memory decodedContext = _host.decodeCtx(_ctx);
 
-        // According to the app basic law, we should never revert in a termination callback
-        // if (!_isSameToken(_superToken) || !_isCFAv1(_agreementClass))
-        //     return _ctx;
+        // TODO: find decodedContext.msgSender in the setups and remove it
+        // TODO: return any funds they have
 
         return _ctx;
     }
