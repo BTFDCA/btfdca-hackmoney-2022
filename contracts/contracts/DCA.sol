@@ -29,7 +29,7 @@ contract DCA is SuperAppBase {
         - For more information on ctx and how it works you can check out our tutorial on userData.
     */
 
-    ISuperfluid public _host;
+    ISuperfluid private _host;
     IConstantFlowAgreementV1 private _cfa;
     IInstantDistributionAgreementV1 private _ida;
 
@@ -97,6 +97,7 @@ contract DCA is SuperAppBase {
     DcaSetup[] private monthlySetups;
 
     function buyAndDistribute(DcaSetup[] memory arr) external {
+        console.log("BTFDCA");
         // TODO: how are the tx fees paid? is it paid by the caller of the function, i.e. Gelato?
 
         // TODO: determine if this array is needed, and find a better pattern
@@ -116,12 +117,14 @@ contract DCA is SuperAppBase {
                 // TODO: update lastBuyTimestamp
             }
         }
+        console.log("found the buyoooors");
 
         // TODO: do we need to assert something?
         // TODO: take 1 bps out of the amount
 
         // TODO: >= MINIMUM_AMOUNT_TO_BUY = 1 matic or something
         if (amountToBuy > 0) {
+            console.log("buying a big bag!", amountToBuy);
             // TODO: unwrap the tokenx to token
             // TODO: ISwapRouter public immutable swapRouter
             // TODO: do the swap
@@ -132,10 +135,13 @@ contract DCA is SuperAppBase {
 
         // TODO: >= MINIMUM_AMOUNT_RECEIVED = something
         if (amountReceived > 0) {
+            console.log("LFG!");
             // TODO: redistribute to investors
             // TODO: calculate the share of each investor
             // TODO: _idaDistribute(...)
         }
+
+        console.log("byeeeeeoooor");
     }
 
     // Invoked by Gelato to trigger buy orders
@@ -146,8 +152,22 @@ contract DCA is SuperAppBase {
 
     function buyTokensMonthly() external {}
 
-    // TODO: send tokens back to buyers by calling the IDA
-    // https://docs.superfluid.finance/superfluid/protocol-developers/super-apps/super-app-callbacks/calling-agreements-in-super-apps
+    function getSetups(uint8 cadence) public view returns (uint256) {
+        console.log("someone's calling getSetups with", cadence);
+
+        if(cadence == 1) {
+            console.log("returning daily setups");
+            return dailySetups.length;
+        }
+        else if(cadence == 7) {
+            console.log("returning weekly setups");
+            return weeklySetups.length;
+        }
+        else {
+            console.log("returning monthly setups");
+            return monthlySetups.length;
+        }
+    }
 
     /**************************************************************************
      * SuperApp callbacks
@@ -194,6 +214,7 @@ contract DCA is SuperAppBase {
         );
 
         // create a setup entry for this address
+        console.log("creating the setup");
         DcaSetup memory setup = DcaSetup({
             investor: decodedContext.msgSender,
             // TODO: floating points are not accepted in amount
@@ -205,13 +226,23 @@ contract DCA is SuperAppBase {
         });
 
         // add address to the setups
-        if(cadence == 1)
+        if(cadence == 1) {
+            console.log("pushing to daily setups");
             dailySetups.push(setup);
-        else if(cadence == 7)
+        }
+        else if(cadence == 7) {
+            console.log("pushing to weekly setups");
             weeklySetups.push(setup);
-        else if (cadence == 30)
+        }
+        else if (cadence == 30) {
+            console.log("pushing to monthly setups");
             monthlySetups.push(setup);
+        }
+        else {
+            console.log("uh oh, no push ups");
+        }
 
+        console.log("returning!");
         return _ctx;
     }
 
@@ -261,6 +292,8 @@ contract DCA is SuperAppBase {
      * IDA logic
      *************************************************************************/
 
+    // TODO: send tokens back to buyers by calling the IDA
+    // https://docs.superfluid.finance/superfluid/protocol-developers/super-apps/super-app-callbacks/calling-agreements-in-super-apps
     // https://docs.superfluid.finance/superfluid/protocol-developers/solidity-examples/solidity-libraries/idav1-library
 
     // https://github.com/Ricochet-Exchange/ricochet-protocol/blob/59124ded777eee9cc2d4bff24a11b0f81f80a732/contracts/REXMarket.sol#L507

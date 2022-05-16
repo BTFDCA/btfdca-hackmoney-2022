@@ -56,6 +56,14 @@ async function createDCAFlow(
 
     const result = await createFlowOperation.exec(signer);
     console.log("stream created!", result);
+
+    // const userFlowRate = await sf.cfaV1.getFlow({
+    //   superToken: srcTokenAddress,
+    //   sender: sender,
+    //   receiver: ADDRESSES.LOCAL.ADDRESS_DCA_SUPERAPP,
+    //   providerOrSigner: signer,
+    // });
+    // console.log(".........", userFlowRate);
   } catch (error) {
     console.error(error);
   }
