@@ -23,8 +23,9 @@ async function createDCAFlow(
   const sf = await Framework.create({
     chainId: Number(chainId),
     provider: provider,
-    dataMode: "WEB3_ONLY",
+    customSubgraphQueriesEndpoint: "",
     resolverAddress: ADDRESSES.LOCAL.ADDRESS_SUPERFLUID_RESOLVER,
+    dataMode: "WEB3_ONLY",
     protocolReleaseVersion: "test",
   });
   console.log("got the sf object", sf);
@@ -39,11 +40,14 @@ async function createDCAFlow(
   const flowRateInWei = ethers.utils.parseEther(flowRateInEth.toFixed(18));
   console.log("flow rate:", flowRateInWei.toString());
 
+  const amountInWei = ethers.utils.parseEther(amount);
+  console.log("amount per day in wei", amountInWei.toString());
+
   // start streaming the tokens from the user to the dca superapp contract
   try {
     let userData = ethers.utils.defaultAbiCoder.encode(
       ["string", "uint256", "string"],
-      [sourceToken, amount, targetToken]
+      [sourceToken, amountInWei, targetToken]
     );
     console.log(userData);
 
