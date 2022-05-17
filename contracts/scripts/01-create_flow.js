@@ -3,8 +3,8 @@ const { ethers, web3 } = require("hardhat");
 
 async function createFlow(sf, daix, signer) {
   const userData = ethers.utils.defaultAbiCoder.encode(
-    ["string", "uint256", "string"],
-    ["fDAIx", "50000000000000000000", "BTC"]
+    ["string", "uint128", "string"],
+    ["fDAIx", "10000000000000000000", "BTC"]
   );
 
   const createFlowOperation = sf.cfaV1.createFlow({

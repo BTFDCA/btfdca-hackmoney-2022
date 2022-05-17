@@ -18,16 +18,16 @@ async function mintDaixTo(dai, daix, signer, account) {
   // mint dai to account
   await dai
     .connect(signer)
-    .mint(account.address, ethers.utils.parseEther("1000"));
+    .mint(account.address, ethers.utils.parseEther("10000"));
   console.log("dai minted");
 
   await dai
     .connect(account)
-    .approve(daix.address, ethers.utils.parseEther("1000"));
+    .approve(daix.address, ethers.utils.parseEther("10000"));
   console.log("approving dai usage");
 
   const daixUpgradeOperation = daix.upgrade({
-    amount: ethers.utils.parseEther("1000"),
+    amount: ethers.utils.parseEther("10000"),
   });
   await daixUpgradeOperation.exec(account);
   console.log("dai upgraded to daix");
@@ -97,6 +97,9 @@ async function main() {
     sf.settings.config.hostAddress,
     sf.settings.config.cfaV1Address,
     sf.settings.config.idaV1Address,
+    // TODO: adjust this to the correct token(s)
+    daix.address,
+    daix.address,
     ""
   );
   await dca.deployed();
