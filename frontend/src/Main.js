@@ -1,9 +1,14 @@
 import { Framework } from "@superfluid-finance/sdk-core";
 import { ethers } from "ethers";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import {
+  OPTIONS_CADENCE,
+  OPTIONS_SOURCE_TOKEN,
+  OPTIONS_TARGET_TOKEN,
+} from "./configs";
 import { ADDRESSES } from "./constants";
 
-import "./App.css";
+import "./Main.css";
 
 async function createDCAFlow(
   sender,
@@ -73,102 +78,6 @@ async function createDCAFlow(
   }
 }
 
-async function getClaimDetails(sender, targetToken) {
-  console.log(
-    "retrieving details of the IDA subscription",
-    sender,
-    targetToken
-  );
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-
-  const chainId = await window.ethereum.request({ method: "eth_chainId" });
-  console.log(`connected to chain ${chainId}`);
-  // TODO: get addresses for this chain id (resolver)
-  // TODO: if test network, send test params to create, otherwise don't
-  const sf = await Framework.create({
-    chainId: Number(chainId),
-    provider: provider,
-    customSubgraphQueriesEndpoint: "",
-    resolverAddress: ADDRESSES.LOCAL.ADDRESS_SUPERFLUID_RESOLVER,
-    dataMode: "WEB3_ONLY",
-    protocolReleaseVersion: "test",
-  });
-  console.log("got the sf object", sf);
-
-  // TODO: assert source token exists in this network
-  const targetTokenContract = await sf.loadSuperToken(targetToken);
-  const targetTokenAddress = targetTokenContract.address;
-
-  try {
-    const subscription = await sf.idaV1.getSubscription({
-      publisher: ADDRESSES.LOCAL.ADDRESS_DCA_SUPERAPP,
-      indexId: 0, // TODO: change
-      superToken: targetTokenAddress,
-      subscriber: sender,
-      providerOrSigner: provider,
-    });
-
-    console.log("fetched the subscription!", subscription);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-async function claim(sender, targetToken) {
-  console.log("claiming rewards!");
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const signer = provider.getSigner();
-
-  const chainId = await window.ethereum.request({ method: "eth_chainId" });
-  console.log(`connected to chain ${chainId}`);
-  // TODO: get addresses for this chain id (resolver)
-  // TODO: if test network, send test params to create, otherwise don't
-  const sf = await Framework.create({
-    chainId: Number(chainId),
-    provider: provider,
-    customSubgraphQueriesEndpoint: "",
-    resolverAddress: ADDRESSES.LOCAL.ADDRESS_SUPERFLUID_RESOLVER,
-    dataMode: "WEB3_ONLY",
-    protocolReleaseVersion: "test",
-  });
-  console.log("got the sf object", sf);
-
-  // TODO: assert source token exists in this network
-  const targetTokenContract = await sf.loadSuperToken(targetToken);
-  const targetTokenAddress = targetTokenContract.address;
-
-  try {
-    const claimOperation = await sf.idaV1.claim({
-      publisher: ADDRESSES.LOCAL.ADDRESS_DCA_SUPERAPP,
-      indexId: 0, // TODO: change
-      superToken: targetTokenAddress,
-      subscriber: sender,
-    });
-    const result = await claimOperation.exec(signer);
-    console.log("claimed!", result);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// TODO: these values should be loaded based on the network
-// i.e. getAvailableSourceTokens(chainId)
-const OPTIONS_SOURCE_TOKEN = [
-  { label: "DAI", value: "fDAIx" },
-  // { label: "USDC", value: "fUSDCx" },
-];
-
-const OPTIONS_TARGET_TOKEN = [
-  { label: "BTC", value: "BTC" },
-  // { label: "ETH", value: "ETH" },
-];
-
-const OPTIONS_CADENCE = [
-  // { label: "month", value: "30" },
-  // { label: "week", value: "7" },
-  { label: "day", value: "1" },
-];
-
 const renderOptions = (options) => {
   return options.map((opt) => (
     <option key={opt.label} value={opt.value}>
@@ -177,55 +86,11 @@ const renderOptions = (options) => {
   ));
 };
 
-function App() {
-  const [currentAccount, setCurrentAccount] = useState("");
-  // TODO: set default values (following the order from the dropdowns)
+function Main({ account, connectWallet }) {
   const [buyAmount, setBuyAmount] = useState(0);
   const [srcToken, setSourceToken] = useState(OPTIONS_SOURCE_TOKEN[0].value);
   const [targetToken, setTargetToken] = useState(OPTIONS_TARGET_TOKEN[0].value);
   const [buyCadence, setBuyCadence] = useState(OPTIONS_CADENCE[0].value);
-
-  const connectWallet = async () => {
-    try {
-      const { ethereum } = window;
-
-      if (!ethereum) {
-        alert("Get MetaMask!");
-        return;
-      }
-      const accounts = await ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      console.log("Connected", accounts[0]);
-      setCurrentAccount(accounts[0]);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const checkIfWalletIsConnected = async () => {
-    const { ethereum } = window;
-
-    if (!ethereum) {
-      console.log("Make sure you have metamask!");
-      return;
-    } else {
-      console.log("We have the ethereum object", ethereum);
-    }
-
-    const accounts = await ethereum.request({ method: "eth_accounts" });
-    const chain = await window.ethereum.request({ method: "eth_chainId" });
-    let chainId = chain;
-    console.log("chain ID:", chain);
-    console.log("global Chain Id:", chainId);
-    if (accounts.length !== 0) {
-      const account = accounts[0];
-      console.log("Found an authorized account:", account);
-      setCurrentAccount(account);
-    } else {
-      console.log("No authorized account found");
-    }
-  };
 
   const setupDCAFlow = async () => {
     console.log(
@@ -236,19 +101,18 @@ function App() {
     // TODO: disable the button and show some info msg
 
     // TODO: do stuff - create the superfluid stream, etc
-    createDCAFlow(currentAccount, buyAmount, srcToken, targetToken, buyCadence);
+    createDCAFlow(account, buyAmount, srcToken, targetToken, buyCadence);
 
     // TODO:
     // redirect the user somewhere if DCA is set up
     // show an error message if something goes wrong
   };
 
-  useEffect(() => {
-    checkIfWalletIsConnected();
-  }, []);
-
   return (
-    <div className="App">
+    <div>
+      <div>
+        <a href="/wallet">Wallet</a>
+      </div>
       {/* logo stuff */}
       <div className="logoWrapper">
         <div>Buy Crypto Assets the Smart Way!</div>
@@ -307,37 +171,18 @@ function App() {
 
       {/* action buttons */}
       <div className="lfgWrapper">
-        {currentAccount === "" ? (
+        {account === "" ? (
           <button id="connectWallet" className="button" onClick={connectWallet}>
             Connect Wallet
           </button>
         ) : (
           <button id="lfgButton" onClick={setupDCAFlow}>
-            LFG!
+            BTFDCA!
           </button>
         )}
-      </div>
-
-      <div style={{ margin: "10rem 0" }}>
-        <button
-          style={{ marginRight: "1rem" }}
-          onClick={async () => {
-            getClaimDetails(currentAccount, srcToken);
-          }}
-        >
-          get distribution details!
-        </button>
-        <button
-          style={{ marginLeft: "1rem" }}
-          onClick={async () => {
-            claim(currentAccount, srcToken);
-          }}
-        >
-          claim!
-        </button>
       </div>
     </div>
   );
 }
 
-export default App;
+export default Main;
