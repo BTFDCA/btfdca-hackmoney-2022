@@ -91,59 +91,73 @@ contract DCA is SuperAppBase {
     mapping(address => DcaSetup) private _addressSetup;
     address[] private _investors;
 
+    uint256 public dummyVal;
+
     // Invoked by Gelato to trigger buy orders
     function buyAndDistribute()
         external
-        returns (uint256 inputAmount, uint256 outputAmount)
+        returns (uint256 amountSpent, uint256 amountReceived)
     {
         console.log("BTFDCA");
         // TODO: how are the tx fees paid? is it paid by the caller of the function, i.e. Gelato?
 
         // TODO: determine if this array is needed, and find a better pattern
-        address[] memory investors;
-        uint256 amountToBuy;
-        uint256 amountReceived;
+        DcaSetup[] memory setups = new DcaSetup[](_investors.length);
 
-        // // find the investors, and how much to buy
-        // // TODO: this assumes a single source token to single destination token
-        // for (uint256 i = 0; i < arr.length; i++) {
-        //     DcaSetup memory s = arr[i];
-        //     // TODO: adjust the time calculation, maybe use blocks
-        //     // TODO: this assumes that the full amount has been transferred, since the flow should respect the cadence
-        //     // timestamps are in seconds + 1 day (24 * 60 * 60)
-        //     if (block.timestamp >= s.lastBuyTimestamp + 51000) {
-        //         investors[i] = s;
-        //         amountToBuy += s.amount;
-        //         // TODO: update lastBuyTimestamp
-        //     }
-        // }
-        // console.log("found the buyoooors");
+        // find the setups, and how much to buy
+        // TODO: this assumes a single source token to single destination token
+        console.log(
+            "going to search through the potential buyooors",
+            _investors.length
+        );
+        for (uint256 i = 0; i < _investors.length; i++) {
+            console.log("-- looping the investors");
+            address investor = _investors[i];
+            console.log("got the investor", investor);
+
+            DcaSetup memory s = _addressSetup[investor];
+            console.log("got the setup", s.amount);
+
+            // TODO: temp, testing
+            if (dummyVal == 0) {
+                // TODO: adjust the time calculation, maybe use blocks
+                // TODO: this assumes that the full amount has been transferred, since the flow should respect the cadence
+                // TODO: replace 51000 by constant
+                // timestamps are in seconds + 1 day (24 * 60 * 60)
+                // if (block.timestamp >= s.lastBuyTimestamp + 51000) {
+                console.log("time to buy for the investor");
+                setups[i] = s;
+                amountSpent += s.amount;
+                // TODO: update lastBuyTimestamp
+                s.lastBuyTimestamp = block.timestamp;
+            }
+        }
+        console.log("found the buyoooors", setups.length);
 
         // // TODO: do we need to assert something?
         // // TODO: take 1 bps out of the amount
 
         // // TODO: >= MINIMUM_AMOUNT_TO_BUY = 1 matic or something
-        // if (amountToBuy > 0) {
-        //     console.log("buying a big bag!", amountToBuy);
-        //     // TODO: unwrap the tokenx to token
-        //     // TODO: ISwapRouter public immutable swapRouter
-        //     // TODO: do the swap
-        //     // TODO: safe transfer and approve
-        //     // TODO: ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({...})
-        //     // TODO: uint256 amountReceived = swapRouter.exactInputSingle(params)
-        // }
-        inputAmount = 1;
-        outputAmount = 2;
+        if (amountSpent > 0) {
+            console.log("buying a big bag!", amountSpent);
+            //     // TODO: unwrap the tokenx to token
+            //     // TODO: ISwapRouter public immutable swapRouter
+            //     // TODO: do the swap
+            //     // TODO: safe transfer and approve
+            //     // TODO: ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({...})
+            //     // TODO: uint256 amountReceived = swapRouter.exactInputSingle(params)
+        }
 
         // // TODO: >= MINIMUM_AMOUNT_RECEIVED = something
-        // if (amountReceived > 0) {
-        //     console.log("LFG!");
-        //     // TODO: redistribute to investors
-        //     // TODO: calculate the share of each investor
-        //     // TODO: _idaDistribute(...)
-        // }
+        if (amountReceived > 0) {
+            console.log("LFG!");
+            //     // TODO: redistribute to investors
+            //     // TODO: calculate the share of each investor
+            //     // TODO: _idaDistribute(...)
+        }
 
-        console.log("byeeeeeoooor", inputAmount, outputAmount);
+        console.log("byeeeeeoooor", amountSpent, amountReceived);
+        dummyVal = 1; // TODO: temp, testing
     }
 
     /**************************************************************************
@@ -195,7 +209,11 @@ contract DCA is SuperAppBase {
         // TODO: validations
 
         // create a setup entry for this address
-        console.log("creating the setup");
+        console.log("creating the setup with");
+        console.log(amount);
+        console.log(srcToken);
+        console.log(targetToken);
+        console.log(decodedContext.timestamp);
         DcaSetup memory setup = DcaSetup({
             amount: amount, // TODO: floating points are not accepted in amount
             sourceToken: srcToken, // TODO: require srcToken to be a valid token
