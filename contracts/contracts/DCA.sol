@@ -9,29 +9,9 @@ import {SuperAppBase} from "@superfluid-finance/ethereum-contracts/contracts/app
 import {IDAv1Library} from "@superfluid-finance/ethereum-contracts/contracts/apps/IDAv1Library.sol";
 
 contract DCA is SuperAppBase {
-    /*
-        1) Super Apps cannot revert in the termination callback (afterAgreementTerminated())
-        - Use the trycatch pattern if performing an action which interacts with other contracts inside of the callback. Doing things like transferring tokens without using the trycatch pattern is dangerous and should be avoided.
-        - Double check internal logic to find any revert possibility.
-
-        2) Super Apps can't became insolvent.
-        - Check if any interaction can lead to insolvency situation.
-        - What is an insolvency situation? This occurs when a Super App tries to continue sending funds that it no longer has. Its super token balance must stay > 0 at minimum. You can learn more about liquidation & solvency in our section on this topic.
-
-        3) Gas limit operations within the termination callback (afterAgreementTerminated())
-        - There is a limit of gas limit send in a callback function (3000000 gas units)
-        - If the Super App reverts on terminations calls because of an out-of-gas error, it will be jailed.
-        - For legitimate cases where the app reverts for out-of-gas (below the gas limit), the Super App is subject to user decision to send a new transaction with more gas. If the app still reverts, it will be jailed.
-        - To protect against these cases, don't create Super Apps that require too much gas within the termination callback.
-
-        4) Incorrect ctx (short for context) data within the termination callback
-        - Any attempt to tamper with the value of ctx or failing to give the right ctx will result in a Jailed App.
-        - Any time a protocol function returns a ctx, that ctx should be passed to the next called function. It will repeat this process even in the return of the callback itself.
-        - For more information on ctx and how it works you can check out our tutorial on userData.
-    */
-
     using IDAv1Library for IDAv1Library.InitData;
     IDAv1Library.InitData internal _idav1Lib;
+    uint32 internal constant _INDEX_ID = 0;
 
     ISuperfluid private _host;
     IConstantFlowAgreementV1 private _cfa;
@@ -105,7 +85,7 @@ contract DCA is SuperAppBase {
 
     uint256 public dummyVal;
 
-    // Invoked by Gelato to trigger buy orders
+    // TODO: Invoked by Gelato to trigger buy orders
     function buyAndDistribute()
         external
         returns (uint256 amountSpent, uint256 amountReceived)
@@ -180,6 +160,16 @@ contract DCA is SuperAppBase {
                 amountReceived
             );
         }
+
+        /*
+            TODO: check
+            Super Apps can't became insolvent.
+            - Check if any interaction can lead to insolvency situation.
+            - What is an insolvency situation? This occurs when a Super App
+            tries to continue sending funds that it no longer has. Its super
+            token balance must stay > 0 at minimum. You can learn more about
+            liquidation & solvency in our section on this topic.
+        */
 
         console.log("byeeeeeoooor", amountSpent, amountReceived);
         dummyVal = 1; // TODO: temp, testing
@@ -263,6 +253,31 @@ contract DCA is SuperAppBase {
         bytes calldata, //_cbdata,
         bytes calldata _ctx
     ) external override onlyHost returns (bytes memory) {
+        /*
+        TODO: check
+        1) Super Apps cannot revert in the termination callback (afterAgreementTerminated())
+        - Use the trycatch pattern if performing an action which interacts with other
+        contracts inside of the callback. Doing things like transferring tokens without
+        using the trycatch pattern is dangerous and should be avoided.
+        - Double check internal logic to find any revert possibility.
+
+        3) Gas limit operations within the termination callback (afterAgreementTerminated())
+        - There is a limit of gas limit send in a callback function (3000000 gas units)
+        - If the Super App reverts on terminations calls because of an out-of-gas error,
+        it will be jailed.
+        - For legitimate cases where the app reverts for out-of-gas (below the gas limit),
+        the Super App is subject to user decision to send a new transaction with more gas.
+        If the app still reverts, it will be jailed.
+        - To protect against these cases, don't create Super Apps that require too much gas
+        within the termination callback.
+
+        4) Incorrect ctx (short for context) data within the termination callback
+        - Any attempt to tamper with the value of ctx or failing to give the right ctx
+        will result in a Jailed App.
+        - Any time a protocol function returns a ctx, that ctx should be passed to the
+        next called function. It will repeat this process even in the return of the callback itself.
+        - For more information on ctx and how it works you can check out our tutorial on userData.
+        */
         ISuperfluid.Context memory decodedContext = _host.decodeCtx(_ctx);
 
         DcaSetup memory dca = _addressSetup[decodedContext.msgSender];
@@ -310,15 +325,4 @@ contract DCA is SuperAppBase {
     //     require(_isCFAv1(agreementClass), "RedirectAll: only CFAv1 supported");
     //     _;
     // }
-
-    /**************************************************************************
-     * IDA logic
-     *************************************************************************/
-    uint32 internal constant _INDEX_ID = 0;
-
-    // TODO: send tokens back to buyers by calling the IDA
-    // https://docs.superfluid.finance/superfluid/protocol-developers/super-apps/super-app-callbacks/calling-agreements-in-super-apps
-    // https://docs.superfluid.finance/superfluid/protocol-developers/solidity-examples/solidity-libraries/idav1-library
-
-    // https://github.com/Ricochet-Exchange/ricochet-protocol/blob/59124ded777eee9cc2d4bff24a11b0f81f80a732/contracts/REXMarket.sol#L507
 }
