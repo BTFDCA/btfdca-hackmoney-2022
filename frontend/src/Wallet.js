@@ -1,8 +1,41 @@
 import { Framework } from "@superfluid-finance/sdk-core";
 import { ethers } from "ethers";
 import { useEffect, useState } from "react";
-import { OPTIONS_SOURCE_TOKEN } from "./configs";
+import { OPTIONS_SOURCE_TOKEN, OPTIONS_TARGET_TOKEN } from "./configs";
 import { ADDRESSES } from "./constants";
+
+async function getFlow(sender, sourceToken) {
+  console.log("Getting the flow");
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+  const signer = provider.getSigner();
+
+  const chainId = await window.ethereum.request({ method: "eth_chainId" });
+  console.log(`connected to chain ${chainId}`);
+  // TODO: get addresses for this chain id (resolver)
+  // TODO: if test network, send test params to create, otherwise don't
+  const sf = await Framework.create({
+    chainId: Number(chainId),
+    provider: provider,
+    customSubgraphQueriesEndpoint: "",
+    resolverAddress: ADDRESSES.MUMBAI.ADDRESS_SUPERFLUID_RESOLVER,
+    // dataMode: "WEB3_ONLY",
+    // protocolReleaseVersion: "test",
+  });
+  console.log("got the sf object", sf);
+
+  // start streaming the tokens from the user to the dca superapp contract
+  try {
+    const userFlowRate = await sf.cfaV1.getFlow({
+      superToken: sourceToken,
+      sender: sender,
+      receiver: ADDRESSES.MUMBAI.ADDRESS_DCA_SUPERAPP,
+      providerOrSigner: signer,
+    });
+    console.log(".........", userFlowRate);
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 async function getClaimDetails(sender, targetToken) {
   console.log(
@@ -20,21 +53,18 @@ async function getClaimDetails(sender, targetToken) {
     chainId: Number(chainId),
     provider: provider,
     customSubgraphQueriesEndpoint: "",
-    resolverAddress: ADDRESSES.LOCAL.ADDRESS_SUPERFLUID_RESOLVER,
-    dataMode: "WEB3_ONLY",
-    protocolReleaseVersion: "test",
+    resolverAddress: ADDRESSES.MUMBAI.ADDRESS_SUPERFLUID_RESOLVER,
+    // dataMode: "WEB3_ONLY",
+    // protocolReleaseVersion: "test",
   });
   console.log("got the sf object", sf);
 
-  // TODO: assert source token exists in this network
-  const targetTokenContract = await sf.loadSuperToken(targetToken);
-  const targetTokenAddress = targetTokenContract.address;
-
   try {
+    console.log("getting the subscription");
     const subscription = await sf.idaV1.getSubscription({
-      publisher: ADDRESSES.LOCAL.ADDRESS_DCA_SUPERAPP,
+      publisher: ADDRESSES.MUMBAI.ADDRESS_DCA_SUPERAPP,
       indexId: 0, // TODO: change
-      superToken: targetTokenAddress,
+      superToken: targetToken,
       subscriber: sender,
       providerOrSigner: provider,
     });
@@ -58,23 +88,21 @@ async function claim(sender, targetToken) {
     chainId: Number(chainId),
     provider: provider,
     customSubgraphQueriesEndpoint: "",
-    resolverAddress: ADDRESSES.LOCAL.ADDRESS_SUPERFLUID_RESOLVER,
-    dataMode: "WEB3_ONLY",
-    protocolReleaseVersion: "test",
+    resolverAddress: ADDRESSES.MUMBAI.ADDRESS_SUPERFLUID_RESOLVER,
+    // dataMode: "WEB3_ONLY",
+    // protocolReleaseVersion: "test",
   });
   console.log("got the sf object", sf);
 
-  // TODO: assert source token exists in this network
-  const targetTokenContract = await sf.loadSuperToken(targetToken);
-  const targetTokenAddress = targetTokenContract.address;
-
   try {
     const claimOperation = await sf.idaV1.claim({
-      publisher: ADDRESSES.LOCAL.ADDRESS_DCA_SUPERAPP,
+      publisher: ADDRESSES.MUMBAI.ADDRESS_DCA_SUPERAPP,
       indexId: 0, // TODO: change
-      superToken: targetTokenAddress,
+      superToken: targetToken,
       subscriber: sender,
     });
+    console.log("created claim operation", claimOperation);
+
     const result = await claimOperation.exec(signer);
     console.log("claimed!", result);
   } catch (error) {
@@ -84,6 +112,7 @@ async function claim(sender, targetToken) {
 
 function Wallet({ account, connectWallet }) {
   const [srcToken] = useState(OPTIONS_SOURCE_TOKEN[0].value);
+  const [targetToken] = useState(OPTIONS_TARGET_TOKEN[0].value);
 
   useEffect(() => {
     console.log("hey");
@@ -99,7 +128,15 @@ function Wallet({ account, connectWallet }) {
         <button
           style={{ marginRight: "1rem" }}
           onClick={async () => {
-            getClaimDetails(account, srcToken);
+            getFlow(account, srcToken);
+          }}
+        >
+          get flow
+        </button>
+        <button
+          style={{ marginLeft: "1rem" }}
+          onClick={async () => {
+            getClaimDetails(account, targetToken);
           }}
         >
           get distribution details!
@@ -107,11 +144,39 @@ function Wallet({ account, connectWallet }) {
         <button
           style={{ marginLeft: "1rem" }}
           onClick={async () => {
-            claim(account, srcToken);
+            claim(account, targetToken);
           }}
         >
           claim!
         </button>
+      </div>
+
+      <div>
+        {/* TODO: get network name from somewhere */}
+        <a
+          href={
+            "https://console.superfluid.finance/" +
+            "mumbai" +
+            "/accounts/" +
+            account
+          }
+        >
+          Go to your superfluid dashboard
+        </a>
+      </div>
+
+      <div>
+        {/* TODO: get network name from somewhere */}
+        <a
+          href={
+            "https://console.superfluid.finance/" +
+            "mumbai" +
+            "/accounts/" +
+            ADDRESSES.MUMBAI.ADDRESS_DCA_SUPERAPP
+          }
+        >
+          Go to the contract's superfluid dashboard
+        </a>
       </div>
     </div>
   );

@@ -29,15 +29,11 @@ async function createDCAFlow(
     chainId: Number(chainId),
     provider: provider,
     customSubgraphQueriesEndpoint: "",
-    resolverAddress: ADDRESSES.LOCAL.ADDRESS_SUPERFLUID_RESOLVER,
-    dataMode: "WEB3_ONLY",
-    protocolReleaseVersion: "test",
+    resolverAddress: ADDRESSES.MUMBAI.ADDRESS_SUPERFLUID_RESOLVER,
+    // dataMode: "WEB3_ONLY",
+    // protocolReleaseVersion: "test",
   });
   console.log("got the sf object", sf);
-
-  // TODO: assert source token exists in this network
-  const srcTokenContract = await sf.loadSuperToken(sourceToken);
-  const srcTokenAddress = srcTokenContract.address;
 
   // the amount of source token per second to be streamed from the user to the contract
   const monthlyBuyAmount = amount * (30 / cadenceInDays);
@@ -54,25 +50,18 @@ async function createDCAFlow(
       ["string", "uint256", "string"],
       [sourceToken, amountInWei, targetToken]
     );
-    console.log(userData);
+    console.log("user data:", userData);
 
     const createFlowOperation = sf.cfaV1.createFlow({
-      receiver: ADDRESSES.LOCAL.ADDRESS_DCA_SUPERAPP,
+      receiver: ADDRESSES.MUMBAI.ADDRESS_DCA_SUPERAPP,
       flowRate: flowRateInWei.toString(),
-      superToken: srcTokenAddress,
+      superToken: sourceToken,
       userData: userData,
     });
+    console.log("created the create flow operation", createFlowOperation);
 
     const result = await createFlowOperation.exec(signer);
     console.log("stream created!", result);
-
-    // const userFlowRate = await sf.cfaV1.getFlow({
-    //   superToken: srcTokenAddress,
-    //   sender: sender,
-    //   receiver: ADDRESSES.LOCAL.ADDRESS_DCA_SUPERAPP,
-    //   providerOrSigner: signer,
-    // });
-    // console.log(".........", userFlowRate);
   } catch (error) {
     console.error(error);
   }

@@ -1,13 +1,17 @@
 // TODO: these values should be loaded based on the network
+
+import { ADDRESSES } from "./constants";
+
 // i.e. getAvailableSourceTokens(chainId)
 const OPTIONS_SOURCE_TOKEN = [
-  { label: "DAI", value: "fDAIx" },
+  { label: "MATICx", value: ADDRESSES.MUMBAI.ADDRESS_MATICX },
+  { label: "DAIx", value: ADDRESSES.MUMBAI.ADDRESS_DAIX },
   // { label: "USDC", value: "fUSDCx" },
 ];
 
 const OPTIONS_TARGET_TOKEN = [
-  { label: "BTC", value: "BTC" },
-  // { label: "ETH", value: "ETH" },
+  // { label: "WBTCx", value: "BTC" },
+  { label: "WETHx", value: ADDRESSES.MUMBAI.ADDRESS_WETHX },
 ];
 
 const OPTIONS_CADENCE = [

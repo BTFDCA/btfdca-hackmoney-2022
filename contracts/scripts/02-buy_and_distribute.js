@@ -17,7 +17,6 @@ const { ethers } = require("hardhat");
 //   const dcaContract = new ethers.Contract(
 //     "0x4A679253410272dd5232B3Ff7cF5dbB88f295319",
 //     [
-//       "function dummyVal() public view returns (uint256)",
 //       "function _addressSetup(address) public view returns (uint256,uint256,string,string)",
 //       "function _investors() public view returns (address[])",
 //       "function buyAndDistribute() external returns (uint256,uint256)",
@@ -26,7 +25,6 @@ const { ethers } = require("hardhat");
 //   );
 
 //   // assert that the contract was retrieved
-//   await dcaContract.dummyVal();
 //   (await provider.getBalance(dcaContract.address)).toString();
 
 //   return dcaContract;
@@ -54,7 +52,6 @@ async function main() {
   const dcaContract = new ethers.Contract(
     "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
     [
-      "function dummyVal() public view returns (uint256)",
       "function _addressSetup(address) public view returns (uint256,uint256,string,string)",
       "function _investors() public view returns (address[])",
       "function buyAndDistribute() external returns (uint256,uint256)",
@@ -63,7 +60,6 @@ async function main() {
   );
 
   // assert that the contract was retrieved
-  await dcaContract.dummyVal();
   (await provider.getBalance(dcaContract.address)).toString();
 
   // TODO: call DCA's buyAndDistribute

@@ -31,10 +31,13 @@ module.exports = {
         interval: 1000,
       },
     },
-    ropsten: {
-      url: process.env.ROPSTEN_URL || "",
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    mumbai: {
+      url: process.env.MUMBAI_URL,
+      accounts: [process.env.MUMBAI_WALLET],
+    },
+    rinkeby: {
+      url: process.env.RINKEBY_URL,
+      accounts: [process.env.RINKEBY_WALLET],
     },
   },
   gasReporter: {

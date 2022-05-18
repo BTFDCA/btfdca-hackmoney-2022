@@ -65,9 +65,12 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={<Main account={account} setAccount={connectWallet} />}
+            element={<Main account={account} connectWallet={connectWallet} />}
           />
-          <Route path="/wallet" element={<Wallet />} />
+          <Route
+            path="/wallet"
+            element={<Wallet account={account} connectWallet={connectWallet} />}
+          />
         </Routes>
       </BrowserRouter>
 
