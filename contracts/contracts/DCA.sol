@@ -1,45 +1,60 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+pragma solidity >=0.8.0;
 
-import "hardhat/console.sol";
-import {ISuperAgreement, SuperAppDefinitions, ISuperfluid, ISuperToken} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
+import {IDAv1Library} from "@superfluid-finance/ethereum-contracts/contracts/apps/IDAv1Library.sol";
+import {SuperAppBase} from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperAppBase.sol";
 import {IConstantFlowAgreementV1} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IConstantFlowAgreementV1.sol";
 import {IInstantDistributionAgreementV1} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IInstantDistributionAgreementV1.sol";
-import {SuperAppBase} from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperAppBase.sol";
-import {IDAv1Library} from "@superfluid-finance/ethereum-contracts/contracts/apps/IDAv1Library.sol";
+import {ISuperAgreement, SuperAppDefinitions, ISuperfluid, ISuperToken} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
+import "hardhat/console.sol";
 
 contract DCA is SuperAppBase {
     using IDAv1Library for IDAv1Library.InitData;
-    IDAv1Library.InitData internal _idav1Lib;
-    uint32 internal constant _INDEX_ID = 0;
+    IDAv1Library.InitData internal idav1Lib;
 
-    ISuperfluid private _host;
-    IConstantFlowAgreementV1 private _cfa;
-    IInstantDistributionAgreementV1 private _ida;
+    uint32 public constant IDA_INDEX_ID = 0;
 
-    ISuperToken private _acceptedSourceToken;
-    ISuperToken private _acceptedTargetToken;
+    ISuperfluid private sfHost;
+    IConstantFlowAgreementV1 private cfa;
+    IInstantDistributionAgreementV1 private ida;
+
+    ISuperToken private acceptedSourceToken;
+    ISuperToken private acceptedTargetToken;
+
+    ISwapRouter public immutable swapRouter;
+    uint256 public minAmountToSpend = 0.1 ether;
+    uint256 public minAmountToDistribute = 0;
+    uint24 public uniswapPoolFee;
 
     constructor(
-        ISuperfluid host,
-        IConstantFlowAgreementV1 cfa,
-        IInstantDistributionAgreementV1 ida,
-        ISuperToken acceptedSourceToken,
-        ISuperToken acceptedTargetToken,
-        string memory registrationKey
+        ISuperfluid _host,
+        IConstantFlowAgreementV1 _cfa,
+        IInstantDistributionAgreementV1 _ida,
+        ISuperToken _acceptedSourceToken,
+        ISuperToken _acceptedTargetToken,
+        string memory _registrationKey,
+        ISwapRouter _swapRouter,
+        uint24 _uniswapPoolFee
     ) {
-        assert(address(host) != address(0));
-        assert(address(cfa) != address(0));
-        assert(address(ida) != address(0));
+        assert(address(_host) != address(0));
+        assert(address(_cfa) != address(0));
+        assert(address(_ida) != address(0));
+        assert(address(_acceptedSourceToken) != address(0));
+        assert(address(_acceptedTargetToken) != address(0));
+        assert(address(_swapRouter) != address(0));
 
-        _host = host;
-        _cfa = cfa;
-        _ida = ida;
-        _acceptedSourceToken = acceptedSourceToken;
-        _acceptedTargetToken = acceptedTargetToken;
+        sfHost = _host;
+        cfa = _cfa;
+        ida = _ida;
+        acceptedSourceToken = _acceptedSourceToken;
+        acceptedTargetToken = _acceptedTargetToken;
+        swapRouter = _swapRouter;
+        uniswapPoolFee = _uniswapPoolFee;
 
-        _idav1Lib = IDAv1Library.InitData(_host, _ida);
-        _idav1Lib.createIndex(_acceptedTargetToken, _INDEX_ID);
+        idav1Lib = IDAv1Library.InitData(sfHost, ida);
+        idav1Lib.createIndex(acceptedTargetToken, IDA_INDEX_ID);
 
         // this reflects the callbacks that are NOT implemented
         uint256 configWord = SuperAppDefinitions.APP_LEVEL_FINAL |
@@ -49,10 +64,10 @@ contract DCA is SuperAppBase {
             SuperAppDefinitions.BEFORE_AGREEMENT_TERMINATED_NOOP;
 
         // needs a registration key for mainnet
-        if (bytes(registrationKey).length > 0) {
-            _host.registerAppWithKey(configWord, registrationKey);
+        if (bytes(_registrationKey).length > 0) {
+            sfHost.registerAppWithKey(configWord, _registrationKey);
         } else {
-            _host.registerApp(configWord);
+            sfHost.registerApp(configWord);
         }
 
         console.log("HELLO FROM CTOR!");
@@ -61,6 +76,18 @@ contract DCA is SuperAppBase {
     /**************************************************************************
      * Misc
      *************************************************************************/
+
+    // TODO: onlyAdmin
+    function setMinAmountToSpend(uint256 _newMinAmountToSpend) public {
+        minAmountToSpend = _newMinAmountToSpend;
+    }
+
+    // TODO: onlyAdmin
+    function setMinAmountToDistribute(uint256 _newMinAmountToDistribute)
+        public
+    {
+        minAmountToDistribute = _newMinAmountToDistribute;
+    }
 
     // solhint-disable-next-line
     receive() external payable {
@@ -80,84 +107,94 @@ contract DCA is SuperAppBase {
         string targetToken;
     }
 
-    mapping(address => DcaSetup) private _addressSetup;
-    address[] private _investors;
+    mapping(address => DcaSetup) public addressSetup;
+    address[] public investors;
 
-    uint256 public dummyVal;
-
-    // TODO: Invoked by Gelato to trigger buy orders
+    // TODO: invoked by a keeper (e.g. Gelato) to trigger buy orders
     function buyAndDistribute()
         external
-        returns (uint256 amountSpent, uint256 amountReceived)
+        returns (uint256 _amountSpent, uint256 _amountReceived)
     {
+        // TODO: tx fees are paid by the caller of the function, e.g. Gelato
         console.log("BTFDCA");
-        // TODO: how are the tx fees paid? is it paid by the caller of the function, i.e. Gelato?
-
-        // TODO: determine if this array is needed, and find a better pattern
-        DcaSetup[] memory setups = new DcaSetup[](_investors.length);
 
         // find the setups, and how much to buy
-        // TODO: this assumes a single source token to single destination token
-        console.log(
-            "going to search through the potential buyooors",
-            _investors.length
-        );
-        for (uint256 i = 0; i < _investors.length; i++) {
-            console.log("-- looping the investors");
-            address investor = _investors[i];
-            console.log("got the investor", investor);
+        console.log("search through the potential buyooors", investors.length);
+        for (uint256 i = 0; i < investors.length; i++) {
+            address investor = investors[i];
+            DcaSetup memory s = addressSetup[investor];
 
-            DcaSetup memory s = _addressSetup[investor];
-            console.log("got the setup", s.amount);
+            // TODO: check that the full amount has been transferred
+            // how? these are supertokens... can realTimeBalanceOf help - but what if the investor tops up their stream?
+            // is the assert implicit with the time check, since the flow should respect the cadence?
 
-            // TODO: temp, testing
-            if (dummyVal == 0) {
-                // TODO: adjust the time calculation, maybe use blocks
-                // TODO: this assumes that the full amount has been transferred, since the flow should respect the cadence
-                // TODO: replace 51000 by constant
-                // timestamps are in seconds + 1 days (24 * 60 * 60)
-                // if (block.timestamp >= s.lastBuyTimestamp + 1 days) {
-                console.log("time to buy for the investor");
-                setups[i] = s;
-                amountSpent += s.amount;
-                // TODO: update lastBuyTimestamp
+            // TODO: adjust the time calculation, maybe use blocks
+            if (block.timestamp >= s.lastBuyTimestamp + 1 days + 1 minutes) {
+                // we're keeping track of the total amount we're going to spend
+                _amountSpent += s.amount;
+                // update lastBuyTimestamp
                 s.lastBuyTimestamp = block.timestamp;
 
-                _idav1Lib.updateSubscriptionUnits(
-                    _acceptedTargetToken,
-                    _INDEX_ID,
+                // update the shares of this investor - TODO: does this ADD to the units, or replaces it?
+                idav1Lib.updateSubscriptionUnits(
+                    acceptedTargetToken,
+                    IDA_INDEX_ID,
                     investor,
                     s.amount
                 );
             }
         }
-        console.log("found the buyoooors", setups.length);
 
-        // // TODO: do we need to assert something?
-        // // TODO: take 1 bps out of the amount
+        // TODO: assert that balanceOf(contract) >= _amountSpent
+        // TODO: take 1 bps out of the amount - check for overflows...
 
-        // // TODO: >= MINIMUM_AMOUNT_TO_BUY = 1 matic or something
-        if (amountSpent > 0) {
-            console.log("buying a big bag!", amountSpent);
-            //     // TODO: unwrap the tokenx to token
-            //     // TODO: ISwapRouter public immutable swapRouter
-            //     // TODO: do the swap
-            //     // TODO: safe transfer and approve
-            //     // TODO: ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({...})
-            //     // TODO: uint256 amountReceived = swapRouter.exactInputSingle(params)
-            amountReceived = 1000000000000000000;
+        console.log("buying a big bag!", _amountSpent);
+        if (_amountSpent > minAmountToSpend) {
+            // unwrap the tokenxs
+            address inTokenAddress = acceptedSourceToken.getUnderlyingToken();
+            address outTokenAddress = acceptedTargetToken.getUnderlyingToken();
+
+            // TODO: deduct - is this actually needed? copied from rex
+            acceptedSourceToken.downgrade(_amountSpent);
+
+            // approve the spend on uniswap
+            TransferHelper.safeApprove(
+                inTokenAddress,
+                address(swapRouter),
+                _amountSpent
+            );
+
+            // do the swap - ATTN: assumes it's a direct swap, otherwise needs a path
+            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
+                .ExactInputSingleParams({
+                    tokenIn: inTokenAddress,
+                    tokenOut: outTokenAddress,
+                    fee: uniswapPoolFee,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: _amountSpent,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: 0
+                });
+
+            // execute the swap
+            _amountReceived = swapRouter.exactInputSingle(params);
+
+            // wrap the output to tokenx
+            acceptedTargetToken.upgrade(_amountReceived);
+            // TODO: rex is doing it this way - is it actually needed?
+            // output.upgrade(outputAmount * (10 ** (18 - ERC20(outputToken).decimals())));
         }
 
-        // // TODO: >= MINIMUM_AMOUNT_RECEIVED = something
-        if (amountReceived > 0) {
+        // TODO: have to double check if we can use a minAmountToDistribute > 0 due to the implications
+        // of not distributing but doing the updateSubscriptionUnits + swap
+        if (_amountReceived > minAmountToDistribute) {
             console.log("LFG!");
-            //     // TODO: redistribute to investors
-            //     // TODO: calculate the share of each investor
-            //     // TODO: _idaDistribute(...)
-            _idav1Lib.distribute(
-                _acceptedTargetToken,
-                _INDEX_ID,
-                amountReceived
+            // TODO: redistribute to investors
+            idav1Lib.distribute(
+                acceptedTargetToken,
+                IDA_INDEX_ID,
+                _amountReceived
             );
         }
 
@@ -171,8 +208,7 @@ contract DCA is SuperAppBase {
             liquidation & solvency in our section on this topic.
         */
 
-        console.log("byeeeeeoooor", amountSpent, amountReceived);
-        dummyVal = 1; // TODO: temp, testing
+        console.log("byeeeeeoooor", _amountSpent, _amountReceived);
     }
 
     /**************************************************************************
@@ -206,7 +242,7 @@ contract DCA is SuperAppBase {
         // TODO: this logic is for a CFA only - assert agreementClass is CFA
         console.log("HELLO FROM AFTER AGREEMENT CREATED!");
 
-        ISuperfluid.Context memory decodedContext = _host.decodeCtx(_ctx);
+        ISuperfluid.Context memory decodedContext = sfHost.decodeCtx(_ctx);
         console.log("sender:", decodedContext.msgSender);
 
         if (decodedContext.userData.length == 0) {
@@ -236,10 +272,10 @@ contract DCA is SuperAppBase {
             lastBuyTimestamp: decodedContext.timestamp // TODO: assert this is now()
         });
 
-        console.log("current number of investors", _investors.length);
-        _addressSetup[decodedContext.msgSender] = setup;
-        _investors.push(decodedContext.msgSender);
-        console.log("added new setup", _investors.length);
+        console.log("current number of investors", investors.length);
+        addressSetup[decodedContext.msgSender] = setup;
+        investors.push(decodedContext.msgSender);
+        console.log("added new setup", investors.length);
 
         console.log("returning!");
         return _ctx;
@@ -278,17 +314,17 @@ contract DCA is SuperAppBase {
         next called function. It will repeat this process even in the return of the callback itself.
         - For more information on ctx and how it works you can check out our tutorial on userData.
         */
-        ISuperfluid.Context memory decodedContext = _host.decodeCtx(_ctx);
+        ISuperfluid.Context memory decodedContext = sfHost.decodeCtx(_ctx);
 
-        DcaSetup memory dca = _addressSetup[decodedContext.msgSender];
+        DcaSetup memory dca = addressSetup[decodedContext.msgSender];
         if (dca.lastBuyTimestamp > 0) {
-            delete _addressSetup[decodedContext.msgSender];
+            delete addressSetup[decodedContext.msgSender];
 
-            // iterate, find index, and remove from _investors
-            for (uint8 i = 0; i < _investors.length; i++) {
-                if (_investors[i] == decodedContext.msgSender) {
-                    _investors[i] = _investors[_investors.length - 1];
-                    _investors.pop();
+            // iterate, find index, and remove from investors
+            for (uint8 i = 0; i < investors.length; i++) {
+                if (investors[i] == decodedContext.msgSender) {
+                    investors[i] = investors[investors.length - 1];
+                    investors.pop();
 
                     break;
                 }
@@ -314,7 +350,7 @@ contract DCA is SuperAppBase {
 
     modifier onlyHost() {
         require(
-            msg.sender == address(_host),
+            msg.sender == address(sfHost),
             "RedirectAll: support only one host"
         );
         _;

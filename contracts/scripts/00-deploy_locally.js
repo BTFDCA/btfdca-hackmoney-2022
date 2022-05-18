@@ -100,7 +100,9 @@ async function main() {
     // TODO: adjust this to the correct token(s)
     daix.address,
     daix.address,
-    ""
+    "",
+    "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+    3000
   );
   await dca.deployed();
   console.log("DCA deployed to:", dca.address);
