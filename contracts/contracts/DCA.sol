@@ -14,7 +14,7 @@ contract DCA is SuperAppBase {
     using IDAv1Library for IDAv1Library.InitData;
     IDAv1Library.InitData internal idav1Lib;
 
-    uint32 public constant IDA_INDEX_ID = 0;
+    uint32 public constant IDA_INDEX_ID = 1;
 
     ISuperfluid private sfHost;
     IConstantFlowAgreementV1 private cfa;
@@ -54,6 +54,7 @@ contract DCA is SuperAppBase {
         uniswapPoolFee = _uniswapPoolFee;
 
         idav1Lib = IDAv1Library.InitData(sfHost, ida);
+        // TODO: use block.timestamp or something?
         idav1Lib.createIndex(acceptedTargetToken, IDA_INDEX_ID);
 
         // this reflects the callbacks that are NOT implemented
@@ -97,6 +98,10 @@ contract DCA is SuperAppBase {
     // Fallback function is called when msg.data is not empty
     fallback() external payable {}
 
+    // TODO: withdraw native
+
+    // TODO: withdraw erc20
+
     /**************************************************************************
      * DCA logic
      *************************************************************************/
@@ -110,6 +115,7 @@ contract DCA is SuperAppBase {
     mapping(address => DcaSetup) public addressSetup;
     address[] public investors;
 
+    // TODO: onlyOwner and allowed addresses, etc
     // TODO: invoked by a keeper (e.g. Gelato) to trigger buy orders
     // TODO: delay = 1 days + 1 minutes
     function buyAndDistribute(uint256 delay)
@@ -125,15 +131,19 @@ contract DCA is SuperAppBase {
             address investor = investors[i];
             DcaSetup memory s = addressSetup[investor];
 
-            // TODO: check that the full amount has been transferred
-            // how? these are supertokens... can realTimeBalanceOf help - but what if the investor tops up their stream?
-            // is the assert implicit with the time check, since the flow should respect the cadence?
-
             // TODO: outsorce this to a var that can be changed OR parametrize this for testing...
             // TODO: adjust the time calculation, maybe use blocks
             if (block.timestamp >= s.lastBuyTimestamp + delay) {
+                // TODO: check that the full amount has been transferred
+                // i.e. that the investor has actually streamed s.amount
+                // how? can realTimeBalanceOf help?
+                // is the assert implicit with the time check, since the flow should respect the cadence?
+                // and when the stream is terminated, we remove them from the list of investors, so this
+                // becomes a non issue?
+
                 // we're keeping track of the total amount we're going to spend
                 _amountSpent += s.amount;
+
                 // update lastBuyTimestamp
                 s.lastBuyTimestamp = block.timestamp;
 
@@ -159,28 +169,12 @@ contract DCA is SuperAppBase {
             // TODO: deduct - is this actually needed? copied from rex
             acceptedSourceToken.downgrade(_amountSpent);
 
-            // approve the spend on uniswap
-            TransferHelper.safeApprove(
+            // tradooooor
+            _amountReceived = swapTokens(
                 inTokenAddress,
-                address(swapRouter),
+                outTokenAddress,
                 _amountSpent
             );
-
-            // do the swap - ATTN: assumes it's a direct swap, otherwise needs a path
-            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
-                .ExactInputSingleParams({
-                    tokenIn: inTokenAddress,
-                    tokenOut: outTokenAddress,
-                    fee: uniswapPoolFee,
-                    recipient: address(this),
-                    deadline: block.timestamp,
-                    amountIn: _amountSpent,
-                    amountOutMinimum: 0,
-                    sqrtPriceLimitX96: 0
-                });
-
-            // execute the swap
-            _amountReceived = swapRouter.exactInputSingle(params);
 
             // wrap the output to tokenx
             acceptedTargetToken.upgrade(_amountReceived);
@@ -211,6 +205,47 @@ contract DCA is SuperAppBase {
         */
 
         console.log("byeeeeeoooor", _amountSpent, _amountReceived);
+    }
+
+    // TODO: visibility, only admin, etc
+    function swapTokens(
+        address inTokenAddress,
+        address outTokenAddress,
+        uint256 amountSpent
+    ) internal returns (uint256 amountReceived) {
+        // TODO: how does this work with native tokens?!?!?
+        console.log("swap it!");
+        console.log("from", inTokenAddress);
+        console.log("to", outTokenAddress);
+        console.log("much", amountSpent);
+
+        // TODO: right now, doing uniswap trade, but this should ideally call a proxy
+        // TODO: if(!allowance <= amountSpent) then do this
+        // approve the spend on uniswap
+        console.log("approving the spend");
+        TransferHelper.safeApprove(
+            inTokenAddress,
+            address(swapRouter),
+            amountSpent
+        );
+
+        // do the swap - ATTN: assumes it's a direct swap, otherwise needs a path
+        console.log("swapping");
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
+            .ExactInputSingleParams({
+                tokenIn: inTokenAddress,
+                tokenOut: outTokenAddress,
+                fee: uniswapPoolFee,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountIn: amountSpent,
+                amountOutMinimum: 0,
+                sqrtPriceLimitX96: 0
+            });
+
+        // execute the swap
+        amountReceived = swapRouter.exactInputSingle(params);
+        console.log("done!", amountReceived);
     }
 
     /**************************************************************************

@@ -52,7 +52,7 @@ async function main() {
   });
 
   // --------------------------------------------------------------------------
-  // DEPLOY THE STABLES
+  // DEPLOY THE TOKENS
   // --------------------------------------------------------------------------
   // deploy a fake erc20 token
   await deployTestToken(errorHandler, [":", "fDAI"], {
@@ -64,6 +64,8 @@ async function main() {
     web3,
     from: accounts[0].address,
   });
+
+  // TODO: deploy another fake erc20 token and a wrapper
 
   // --------------------------------------------------------------------------
   // initialize the superfluid framework...put custom and web3 only bc we are using hardhat locally
@@ -92,17 +94,17 @@ async function main() {
   // --------------------------------------------------------------------------
   // DEPLOY THE DCA CONTRACT
   // --------------------------------------------------------------------------
+  console.log("deploying DCA");
   const DCA = await hre.ethers.getContractFactory("DCA");
   const dca = await DCA.deploy(
     sf.settings.config.hostAddress,
     sf.settings.config.cfaV1Address,
     sf.settings.config.idaV1Address,
-    // TODO: adjust this to the correct token(s)
-    daix.address,
-    daix.address,
+    daix.address, // process.env.MUMBAI_MATICX, // source token
+    daix.address, // process.env.MUMBAI_WETHX, // target token
     "",
-    "0xE592427A0AEce92De3Edee1F18E0157C05861564",
-    3000
+    process.env.MUMBAI_UNISWAP_ROUTER, // uniswap router
+    process.env.MUMBAI_UNISWAP_MATICWETH_POOL_FEE // uniswap pool fee
   );
   await dca.deployed();
   console.log("DCA deployed to:", dca.address);

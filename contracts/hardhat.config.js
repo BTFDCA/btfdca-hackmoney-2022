@@ -26,14 +26,21 @@ module.exports = {
   solidity: "0.8.9",
   networks: {
     hardhat: {
-      mining: {
-        auto: false,
-        interval: 1000,
-      },
+      // mining: {
+      //   auto: false,
+      //   interval: 1000,
+      // },
+      accounts: [
+        {
+          privateKey: process.env.MUMBAI_WALLET,
+          balance: "100000000000000000000000000",
+        },
+      ],
     },
     mumbai: {
       url: process.env.MUMBAI_URL,
       accounts: [process.env.MUMBAI_WALLET],
+      gas: 2100000,
     },
     rinkeby: {
       url: process.env.RINKEBY_URL,

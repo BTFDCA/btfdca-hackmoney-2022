@@ -49,6 +49,7 @@ async function main() {
   // const dcaContract = getDcaContract(provider);
   // listBalances(provider, signer, dcaContract);
 
+  // TODO: use the mumbai way
   const dcaContract = new ethers.Contract(
     "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
     [
@@ -62,7 +63,7 @@ async function main() {
   // assert that the contract was retrieved
   (await provider.getBalance(dcaContract.address)).toString();
 
-  // TODO: call DCA's buyAndDistribute
+  // call DCA's buyAndDistribute
   // delay in seconds
   await dcaContract.connect(await provider.getSigner()).buyAndDistribute(60);
 }
