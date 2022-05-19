@@ -22,7 +22,7 @@ async function createDCAFlow(
   const signer = provider.getSigner();
 
   const chainId = await window.ethereum.request({ method: "eth_chainId" });
-  console.log(`connected to chain ${chainId}`);
+  console.log(`connected to chain ${Number(chainId)}`);
   // TODO: get addresses for this chain id (resolver)
   // TODO: if test network, send test params to create, otherwise don't
   const sf = await Framework.create({
@@ -67,24 +67,45 @@ async function createDCAFlow(
   }
 }
 
-const renderOptions = (options) => {
-  return options.map((opt) => (
-    <option key={opt.label} value={opt.value}>
-      {opt.label}
-    </option>
-  ));
-};
-
 function Main({ account, connectWallet }) {
   const [buyAmount, setBuyAmount] = useState(0);
   const [srcToken, setSourceToken] = useState(OPTIONS_SOURCE_TOKEN[0].value);
   const [targetToken, setTargetToken] = useState(OPTIONS_TARGET_TOKEN[0].value);
   const [buyCadence, setBuyCadence] = useState(OPTIONS_CADENCE[0].value);
 
+  const renderOptions = (options) => {
+    return options.map((opt) => (
+      <option key={opt.label} value={opt.value}>
+        {opt.label}
+      </option>
+    ));
+  };
+
+  const estimateRequiredAmount = (amount, cadenceInDays) => {
+    if (amount > 0 && cadenceInDays > 0) {
+      const cadenceInHours = cadenceInDays * 24;
+      const amountPerHour = amount / cadenceInHours;
+
+      let escrowHours = 4; // TODO: if testnet == 1, else == 4
+      const requiredEscrow = amountPerHour * escrowHours;
+
+      return requiredEscrow.toFixed(2);
+      // const flowRateInEth = monthlyBuyAmount / 3600 / 24 / 30;
+      // const flowRateInWei = ethers.utils.parseEther(flowRateInEth.toFixed(18));
+      // console.log("flow rate:", flowRateInWei.toString());
+
+      // const amountInWei = ethers.utils.parseEther(amount);
+      // console.log("amount per day in wei", amountInWei.toString());
+    } else {
+      return 0;
+    }
+  };
+
   const setupDCAFlow = async () => {
     console.log(
-      `setup an agreement to trade ${buyAmount} ${srcToken} for ${targetToken} every ${buyCadence}`
+      `setup an agreement to trade ${buyAmount} ${srcToken} for ${targetToken} every ${buyCadence} day(s)`
     );
+
     // TODO: perform validations - i.e. check if the wallet has the funds etc
     // if not srcToken
     // TODO: disable the button and show some info msg
@@ -155,7 +176,15 @@ function Main({ account, connectWallet }) {
           if something goes wrong, or we want to alert the user about something
         </div>
 
-        <div>TODO: calculate how much in funds the wallet must have</div>
+        {/* TODO: show label of srcToken */}
+        <div>
+          Your wallet must have at least{" "}
+          {estimateRequiredAmount(buyAmount, buyCadence)} {srcToken} to BTFDCA!
+        </div>
+        <div>
+          we're using superfluid, so you need to wrap your token into tokenx.
+          you can do it in /wallet
+        </div>
       </div>
 
       {/* action buttons */}

@@ -24,10 +24,11 @@ function App() {
       const accounts = await ethereum.request({
         method: "eth_requestAccounts",
       });
-      console.log("Connected", accounts[0]);
+
+      console.log("[init] connected", accounts[0]);
       setAccount(accounts[0]);
     } catch (error) {
-      console.log(error);
+      console.log("[init]", error);
     }
   };
 
@@ -35,23 +36,21 @@ function App() {
     const { ethereum } = window;
 
     if (!ethereum) {
-      console.log("Make sure you have metamask!");
+      console.log("[init] metamask not found!");
       return;
-    } else {
-      console.log("We have the ethereum object", ethereum);
     }
 
+    console.log("[init] ethereum object found in window", ethereum);
     const accounts = await ethereum.request({ method: "eth_accounts" });
     const chain = await window.ethereum.request({ method: "eth_chainId" });
-    let chainId = chain;
-    console.log("chain ID:", chain);
-    console.log("global Chain Id:", chainId);
+    console.log("[init] connected to chain id", Number(chain));
+
     if (accounts.length !== 0) {
       const account = accounts[0];
-      console.log("Found an authorized account:", account);
+      console.log("[init] found an authorized account", account);
       setAccount(account);
     } else {
-      console.log("No authorized account found");
+      console.log("[init] no authorized account found");
     }
   };
 
