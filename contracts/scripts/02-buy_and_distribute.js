@@ -63,7 +63,8 @@ async function main() {
   (await provider.getBalance(dcaContract.address)).toString();
 
   // TODO: call DCA's buyAndDistribute
-  await dcaContract.connect(await provider.getSigner()).buyAndDistribute();
+  // delay in seconds
+  await dcaContract.connect(await provider.getSigner()).buyAndDistribute(60);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

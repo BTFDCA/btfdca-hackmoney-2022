@@ -111,7 +111,8 @@ contract DCA is SuperAppBase {
     address[] public investors;
 
     // TODO: invoked by a keeper (e.g. Gelato) to trigger buy orders
-    function buyAndDistribute()
+    // TODO: delay = 1 days + 1 minutes
+    function buyAndDistribute(uint256 delay)
         external
         returns (uint256 _amountSpent, uint256 _amountReceived)
     {
@@ -128,8 +129,9 @@ contract DCA is SuperAppBase {
             // how? these are supertokens... can realTimeBalanceOf help - but what if the investor tops up their stream?
             // is the assert implicit with the time check, since the flow should respect the cadence?
 
+            // TODO: outsorce this to a var that can be changed OR parametrize this for testing...
             // TODO: adjust the time calculation, maybe use blocks
-            if (block.timestamp >= s.lastBuyTimestamp + 1 days + 1 minutes) {
+            if (block.timestamp >= s.lastBuyTimestamp + delay) {
                 // we're keeping track of the total amount we're going to spend
                 _amountSpent += s.amount;
                 // update lastBuyTimestamp
