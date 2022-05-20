@@ -14,13 +14,14 @@ async function main() {
 
   // do something just to check that the contract is fetched
   console.log("just some call to check if we fetched the correct instance");
-  const ret = await dcaContract.addressSetup(await signer.getAddress());
+  let ret = await dcaContract.addressSetup(await signer.getAddress());
   console.log("some return value", ret);
 
   // call DCA's buyAndDistribute
   console.log("let's activate the swap and return the output to the investors");
   const delay = 60;
-  await dcaContract.connect(signer).buyAndDistribute(delay);
+  ret = await dcaContract.connect(signer).buyAndDistribute(delay);
+  console.log("return value", ret);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

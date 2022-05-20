@@ -2,7 +2,7 @@ const hre = require("hardhat");
 
 const { Framework } = require("@superfluid-finance/sdk-core");
 const { ethers, web3 } = require("hardhat");
-const daiABI = require("../abis/fDAIABI");
+const daiABI = require("../../abis/fDAIABI");
 
 const deployFramework = require("@superfluid-finance/ethereum-contracts/scripts/deploy-framework");
 const deployTestToken = require("@superfluid-finance/ethereum-contracts/scripts/deploy-test-token");
@@ -12,31 +12,37 @@ const errorHandler = (err) => {
   if (err) throw err;
 };
 
-async function mintDaixTo(dai, daix, signer, account) {
-  console.log("minting dai/x to", account.address);
+async function mintTokensTo(token, tokenx, signer, account) {
+  console.log("minting token/x to", account.address);
 
-  // mint dai to account
-  await dai
+  const x = await token
     .connect(signer)
     .mint(account.address, ethers.utils.parseEther("10000"));
-  console.log("dai minted");
+  console.log("token minted");
+  x.wait();
 
-  await dai
+  // const tokenBal = await token.balanceOf({
+  //   account: account.address,
+  //   providerOrSigner: signer,
+  // });
+  // console.log("token bal for acct: ", tokenBal);
+
+  await token
     .connect(account)
-    .approve(daix.address, ethers.utils.parseEther("10000"));
-  console.log("approving dai usage");
+    .approve(tokenx.address, ethers.utils.parseEther("10000"));
+  console.log("approved token usage");
 
-  const daixUpgradeOperation = daix.upgrade({
+  const tokenxUpgradeOperation = tokenx.upgrade({
     amount: ethers.utils.parseEther("10000"),
   });
-  await daixUpgradeOperation.exec(account);
-  console.log("dai upgraded to daix");
+  await tokenxUpgradeOperation.exec(account);
+  console.log("token upgraded to tokenx");
 
-  const daiBal = await daix.balanceOf({
+  const tokenxBal = await tokenx.balanceOf({
     account: account.address,
     providerOrSigner: signer,
   });
-  console.log("daix bal for acct: ", daiBal);
+  console.log("tokenx bal for acct: ", tokenxBal);
 }
 
 async function main() {
@@ -65,7 +71,15 @@ async function main() {
     from: accounts[0].address,
   });
 
-  // TODO: deploy another fake erc20 token and a wrapper
+  // deploy another fake erc20 token and a wrapper
+  await deployTestToken(errorHandler, [":", "ETHG"], {
+    web3,
+    from: accounts[0].address,
+  });
+  await deploySuperToken(errorHandler, [":", "ETHG"], {
+    web3,
+    from: accounts[0].address,
+  });
 
   // --------------------------------------------------------------------------
   // initialize the superfluid framework...put custom and web3 only bc we are using hardhat locally
@@ -87,9 +101,18 @@ async function main() {
   const daiAddress = daix.underlyingToken.address;
   const dai = new ethers.Contract(daiAddress, daiABI, accounts[0]);
   // mint daix tokens to accounts
-  await mintDaixTo(dai, daix, accounts[0], accounts[0]);
-  await mintDaixTo(dai, daix, accounts[0], accounts[1]);
-  await mintDaixTo(dai, daix, accounts[0], accounts[2]);
+  await mintTokensTo(dai, daix, accounts[0], accounts[0]);
+  await mintTokensTo(dai, daix, accounts[0], accounts[1]);
+
+  // --------------------------------------------------------------------------
+
+  // use the framework to get the super toen
+  const ethgx = await sf.loadSuperToken("ETHGx");
+  // get the contract object for the erc20 token
+  const ethgxAddress = ethgx.underlyingToken.address;
+  const ethg = new ethers.Contract(ethgxAddress, daiABI, accounts[0]);
+  // mint ethgx tokens to accounts
+  await mintTokensTo(ethg, ethgx, accounts[0], accounts[0]);
 
   // --------------------------------------------------------------------------
   // DEPLOY THE DCA CONTRACT
@@ -100,11 +123,11 @@ async function main() {
     sf.settings.config.hostAddress,
     sf.settings.config.cfaV1Address,
     sf.settings.config.idaV1Address,
-    daix.address, // process.env.MUMBAI_MATICX, // source token
-    daix.address, // process.env.MUMBAI_WETHX, // target token
+    daix.address,
+    ethgx.address,
     "",
     process.env.MUMBAI_UNISWAP_ROUTER, // uniswap router
-    process.env.MUMBAI_UNISWAP_MATICWETH_POOL_FEE // uniswap pool fee
+    process.env.MUMBAI_UNISWAP_POOL_FEE // uniswap pool fee
   );
   await dca.deployed();
   console.log("DCA deployed to:", dca.address);

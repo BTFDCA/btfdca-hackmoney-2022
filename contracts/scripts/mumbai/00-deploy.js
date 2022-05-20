@@ -13,11 +13,11 @@ async function main() {
     process.env.MUMBAI_SF_HOST, // host
     process.env.MUMBAI_SF_CFA, // cfa
     process.env.MUMBAI_SF_IDA, // ida
-    process.env.MUMBAI_MATICX, // source token
-    process.env.MUMBAI_WETHX, // target token
+    process.env.MUMBAI_FDAIX, // source token
+    process.env.MUMBAI_ETHGx, // target token
     "", // registration key
     process.env.MUMBAI_UNISWAP_ROUTER, // uniswap router
-    process.env.MUMBAI_UNISWAP_MATICWETH_POOL_FEE // uniswap pool fee
+    process.env.MUMBAI_UNISWAP_POOL_FEE // uniswap pool fee
   );
   await dcaContract.deployed();
   console.log("DCA deployed to:", dcaContract.address);
