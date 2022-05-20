@@ -23,7 +23,7 @@ contract DCA is SuperAppBase {
     ISuperToken private acceptedSourceToken;
     ISuperToken private acceptedTargetToken;
 
-    ISwapRouter public immutable swapRouter;
+    ISwapRouter public swapRouter;
     uint256 public minAmountToSpend = 0.1 ether;
     uint256 public minAmountToDistribute = 0;
     uint24 public uniswapPoolFee;
@@ -90,6 +90,10 @@ contract DCA is SuperAppBase {
         minAmountToDistribute = _newMinAmountToDistribute;
     }
 
+    // TODO: set pool fee
+
+    // TODO: set swap router
+
     // solhint-disable-next-line
     receive() external payable {
         // Function to receive Ether. msg.data must be empty
@@ -125,13 +129,14 @@ contract DCA is SuperAppBase {
         // TODO: tx fees are paid by the caller of the function, e.g. Gelato
         console.log("BTFDCA");
 
-        // find the setups, and how much to buy
+        // find the investors, and the total amount to buy
+        address[] memory currentInvestors = new address[](investors.length);
+        uint256 j = 0;
         console.log("search through the potential buyooors", investors.length);
         for (uint256 i = 0; i < investors.length; i++) {
             address investor = investors[i];
             DcaSetup memory s = addressSetup[investor];
 
-            // TODO: outsorce this to a var that can be changed OR parametrize this for testing...
             // TODO: adjust the time calculation, maybe use blocks
             if (block.timestamp >= s.lastBuyTimestamp + delay) {
                 // TODO: check that the full amount has been transferred
@@ -144,49 +149,77 @@ contract DCA is SuperAppBase {
                 // we're keeping track of the total amount we're going to spend
                 _amountSpent += s.amount;
 
-                // update lastBuyTimestamp
+                // update lastBuyTimestamp for this investor
                 s.lastBuyTimestamp = block.timestamp;
 
-                // update the shares of this investor - TODO: does this ADD to the units, or replaces it?
-                idav1Lib.updateSubscriptionUnits(
-                    acceptedTargetToken,
-                    IDA_INDEX_ID,
-                    investor,
-                    s.amount
-                );
+                // keep track of the investors for the distribution
+                currentInvestors[j] = investor;
+                j++;
             }
         }
 
         // TODO: assert that balanceOf(contract) >= _amountSpent
         // TODO: take 1 bps out of the amount - check for overflows...
 
+        // perform the swap
         console.log("buying a big bag!", _amountSpent);
         if (_amountSpent > minAmountToSpend) {
-            // unwrap the tokenxs
+            // unwrap the tokenxs (in to uniswap, out from uniswap)
             address inTokenAddress = acceptedSourceToken.getUnderlyingToken();
             address outTokenAddress = acceptedTargetToken.getUnderlyingToken();
 
-            // TODO: deduct - is this actually needed? copied from rex
-            acceptedSourceToken.downgrade(_amountSpent);
+            // downgrading supertoken to erc20 calls transfer to send the tokens back to the contract
+            // only do this if source token is not a pure supertoken
+            if (inTokenAddress != address(0)) {
+                acceptedSourceToken.downgrade(_amountSpent);
+            }
 
             // tradooooor
+            // if tokens are pure supertokens, then use their address, otherwise use the erc20 address
             _amountReceived = swapTokens(
-                inTokenAddress,
-                outTokenAddress,
+                inTokenAddress == address(0)
+                    ? address(acceptedSourceToken)
+                    : inTokenAddress,
+                outTokenAddress == address(0)
+                    ? address(acceptedTargetToken)
+                    : outTokenAddress,
                 _amountSpent
             );
 
-            // wrap the output to tokenx
-            acceptedTargetToken.upgrade(_amountReceived);
-            // TODO: rex is doing it this way - is it actually needed?
-            // output.upgrade(outputAmount * (10 ** (18 - ERC20(outputToken).decimals())));
+            // wrap the output to a supertoken
+            // only do this if target token is not a pure supertoken
+            if (outTokenAddress != address(0)) {
+                // TODO: rex is doing it this way - is it actually needed?
+                // upgrade(_amountReceived * (10 ** (18 - ERC20(outputToken).decimals())));
+                acceptedTargetToken.upgrade(_amountReceived);
+            }
         }
 
-        // TODO: have to double check if we can use a minAmountToDistribute > 0 due to the implications
-        // of not distributing but doing the updateSubscriptionUnits + swap
-        if (_amountReceived > minAmountToDistribute) {
+        // distribute the swapped tokens to the investors; 2nd check is kinda redundant
+        // TODO: what happens if we've swapped, but the amountReceived is NOT greater than minAMountToDistribute?
+        console.log("giving back");
+        if (
+            _amountReceived > minAmountToDistribute &&
+            currentInvestors.length > 0
+        ) {
+            // update the shares of this investor
+            // we want to do this after we've made sure that the swap has gone through
+            console.log("update shares");
+            for (uint256 i = 0; i < currentInvestors.length; i++) {
+                address ci = currentInvestors[i];
+                if (ci == address(0)) break; // no more investors
+
+                // TODO: does this ADD to the units, or replaces it? we want to add
+                idav1Lib.updateSubscriptionUnits(
+                    acceptedTargetToken,
+                    IDA_INDEX_ID,
+                    ci,
+                    addressSetup[ci].amount
+                );
+            }
+
+            // redistribute to investors
             console.log("LFG!");
-            // TODO: redistribute to investors
             idav1Lib.distribute(
                 acceptedTargetToken,
                 IDA_INDEX_ID,
@@ -213,13 +246,12 @@ contract DCA is SuperAppBase {
         address outTokenAddress,
         uint256 amountSpent
     ) internal returns (uint256 amountReceived) {
-        // TODO: how does this work with native tokens?!?!?
+        // TODO: doing trade on  uniswap, but ideally call a proxy
         console.log("swap it!");
         console.log("from", inTokenAddress);
         console.log("to", outTokenAddress);
         console.log("much", amountSpent);
 
-        // TODO: right now, doing uniswap trade, but this should ideally call a proxy
         // TODO: if(!allowance <= amountSpent) then do this
         // approve the spend on uniswap
         console.log("approving the spend");
@@ -230,7 +262,7 @@ contract DCA is SuperAppBase {
         );
 
         // do the swap - ATTN: assumes it's a direct swap, otherwise needs a path
-        console.log("swapping");
+        console.log("prep the args");
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
                 tokenIn: inTokenAddress,
@@ -244,6 +276,7 @@ contract DCA is SuperAppBase {
             });
 
         // execute the swap
+        console.log("swapping");
         amountReceived = swapRouter.exactInputSingle(params);
         console.log("done!", amountReceived);
     }
