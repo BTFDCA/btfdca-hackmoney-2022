@@ -281,6 +281,30 @@ contract DCA is SuperAppBase {
         console.log("done!", amountReceived);
     }
 
+    // TODO: just for testing
+    function distributeTokens(uint256 amount) public {
+        console.log("distributing", amount);
+
+        console.log("update shares");
+        for (uint256 i = 0; i < investors.length; i++) {
+            address ci = investors[i];
+            if (ci == address(0)) break; // no more investors
+
+            // TODO: does this ADD to the units, or replaces it? we want to add
+            idav1Lib.updateSubscriptionUnits(
+                acceptedTargetToken,
+                IDA_INDEX_ID,
+                ci,
+                addressSetup[ci].amount
+            );
+        }
+
+        // redistribute to investors
+        console.log("LFG!");
+        idav1Lib.distribute(acceptedTargetToken, IDA_INDEX_ID, amount);
+        console.log("done");
+    }
+
     /**************************************************************************
      * SuperApp callbacks
      *************************************************************************/
