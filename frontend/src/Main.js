@@ -3,8 +3,8 @@ import { ethers } from "ethers";
 import { useState } from "react";
 import {
   OPTIONS_CADENCE,
-  OPTIONS_SOURCE_TOKEN,
-  OPTIONS_TARGET_TOKEN,
+  getSourceTokenOptions,
+  getTargetTokenOptions,
 } from "./configs";
 import { ADDRESSES } from "./constants";
 
@@ -67,10 +67,14 @@ async function createDCAFlow(
   }
 }
 
-function Main({ account, connectWallet }) {
+function Main({ chainId, account, connectWallet }) {
   const [buyAmount, setBuyAmount] = useState(0);
-  const [srcToken, setSourceToken] = useState(OPTIONS_SOURCE_TOKEN[0].value);
-  const [targetToken, setTargetToken] = useState(OPTIONS_TARGET_TOKEN[0].value);
+  const [srcToken, setSourceToken] = useState(
+    getSourceTokenOptions(chainId)[0].value
+  );
+  const [targetToken, setTargetToken] = useState(
+    getTargetTokenOptions(chainId)[0].value
+  );
   const [buyCadence, setBuyCadence] = useState(OPTIONS_CADENCE[0].value);
 
   const renderOptions = (options) => {
@@ -146,7 +150,7 @@ function Main({ account, connectWallet }) {
             className="dropdown"
             onChange={(e) => setSourceToken(e.target.value)}
           >
-            {renderOptions(OPTIONS_SOURCE_TOKEN)}
+            {renderOptions(getSourceTokenOptions(chainId))}
           </select>
         </span>
         <span>worth of</span>
@@ -155,7 +159,7 @@ function Main({ account, connectWallet }) {
             className="dropdown"
             onChange={(e) => setTargetToken(e.target.value)}
           >
-            {renderOptions(OPTIONS_TARGET_TOKEN)}
+            {renderOptions(getTargetTokenOptions(chainId))}
           </select>
         </span>
         <span>every</span>

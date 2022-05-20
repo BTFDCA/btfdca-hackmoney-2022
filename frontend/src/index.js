@@ -12,6 +12,7 @@ const root = createRoot(container);
 
 function App() {
   const [account, setAccount] = useState("");
+  const [chainId, setChainId] = useState(80001);
 
   const connectWallet = async () => {
     try {
@@ -24,9 +25,11 @@ function App() {
       const accounts = await ethereum.request({
         method: "eth_requestAccounts",
       });
+      const chainId = Number(await ethereum.request({ method: "eth_chainId" }));
 
       console.log("[init] connected", accounts[0]);
       setAccount(accounts[0]);
+      setChainId(chainId);
     } catch (error) {
       console.log("[init]", error);
     }
@@ -42,13 +45,14 @@ function App() {
 
     console.log("[init] ethereum object found in window", ethereum);
     const accounts = await ethereum.request({ method: "eth_accounts" });
-    const chain = await window.ethereum.request({ method: "eth_chainId" });
-    console.log("[init] connected to chain id", Number(chain));
+    const chainId = Number(await ethereum.request({ method: "eth_chainId" }));
+    console.log("[init] connected to chain id", chainId);
 
     if (accounts.length !== 0) {
       const account = accounts[0];
-      console.log("[init] found an authorized account", account);
+      console.log("[init] found an authorized account", account, chainId);
       setAccount(account);
+      setChainId(chainId);
     } else {
       console.log("[init] no authorized account found");
     }
@@ -64,11 +68,23 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={<Main account={account} connectWallet={connectWallet} />}
+            element={
+              <Main
+                chainId={chainId}
+                account={account}
+                connectWallet={connectWallet}
+              />
+            }
           />
           <Route
             path="/wallet"
-            element={<Wallet account={account} connectWallet={connectWallet} />}
+            element={
+              <Wallet
+                chainId={chainId}
+                account={account}
+                connectWallet={connectWallet}
+              />
+            }
           />
         </Routes>
       </BrowserRouter>

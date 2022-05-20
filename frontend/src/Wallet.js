@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { supertokenAbi } from "./abis/supertoken";
 import { erc20abi } from "./abis/erc20";
 import {
-  OPTIONS_SOURCE_TOKEN,
-  OPTIONS_TARGET_TOKEN,
-  OPTIONS_TOKEN_WRAPS,
+  getSourceTokenOptions,
+  getTargetTokenOptions,
+  getWrapTokensOptions,
 } from "./configs";
 import { ADDRESSES, SF_DISTRIBUTION_SUBSCRIPTION_IDX } from "./constants";
 
@@ -16,32 +16,34 @@ async function _getSignerAndFramework() {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const signer = provider.getSigner();
 
-  const chainId = await window.ethereum.request({ method: "eth_chainId" });
+  const chainId = Number(
+    await window.ethereum.request({ method: "eth_chainId" })
+  );
   // TODO: get addresses for this chain id (resolver)
   // TODO: if test network, send test params to create, otherwise don't
   const sf = await Framework.create({
-    chainId: Number(chainId),
+    chainId: chainId,
     provider: provider,
     customSubgraphQueriesEndpoint: "",
-    resolverAddress: ADDRESSES.MUMBAI.ADDRESS_SUPERFLUID_RESOLVER,
+    resolverAddress: ADDRESSES[chainId].ADDRESS_SUPERFLUID_RESOLVER,
     // dataMode: "WEB3_ONLY",
     // protocolReleaseVersion: "test",
   });
   console.log("[wallet] got the sf object");
 
-  return [signer, sf];
+  return [chainId, signer, sf];
 }
 
 async function getFlow(sender, token) {
   console.log("[wallet] getting flow details for", sender, "and", token);
-  const [signer, sf] = await _getSignerAndFramework();
+  const [chainId, signer, sf] = await _getSignerAndFramework();
 
   // start streaming the tokens from the user to the dca superapp contract
   try {
     const flow = await sf.cfaV1.getFlow({
       superToken: token,
       sender: sender,
-      receiver: ADDRESSES.MUMBAI.ADDRESS_DCA_SUPERAPP,
+      receiver: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP,
       providerOrSigner: signer,
     });
     console.log("[wallet] flow", flow);
@@ -56,12 +58,12 @@ async function getClaimDetails(sender, targetToken) {
     sender,
     targetToken
   );
-  const [signer, sf] = await _getSignerAndFramework();
+  const [chainId, signer, sf] = await _getSignerAndFramework();
 
   try {
     console.log("getting the subscription");
     const subscription = await sf.idaV1.getSubscription({
-      publisher: ADDRESSES.MUMBAI.ADDRESS_DCA_SUPERAPP,
+      publisher: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP,
       indexId: 0, // TODO: change
       superToken: targetToken,
       subscriber: sender,
@@ -76,11 +78,11 @@ async function getClaimDetails(sender, targetToken) {
 
 async function claim(sender, targetToken) {
   console.log("claiming rewards!");
-  const [signer, sf] = await _getSignerAndFramework();
+  const [chainId, signer, sf] = await _getSignerAndFramework();
 
   try {
     const claimOperation = await sf.idaV1.claim({
-      publisher: ADDRESSES.MUMBAI.ADDRESS_DCA_SUPERAPP,
+      publisher: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP,
       indexId: 0, // TODO: change
       superToken: targetToken,
       subscriber: sender,
@@ -96,13 +98,13 @@ async function claim(sender, targetToken) {
 
 async function approveSubscription(token) {
   console.log("approving subscription to", token);
-  const [, sf] = await _getSignerAndFramework();
+  const [chainId, , sf] = await _getSignerAndFramework();
 
   try {
     const result = await sf.idaV1.approveSubscription({
       indexId: SF_DISTRIBUTION_SUBSCRIPTION_IDX,
       superToken: token,
-      publisher: ADDRESSES.MUMBAI.ADDRESS_DCA_SUPERAPP,
+      publisher: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP,
     });
     console.log("subscription approved", result);
   } catch (error) {
@@ -138,7 +140,7 @@ async function upgradeToken(token, amount) {
     return;
   }
 
-  const [signer, sf] = await _getSignerAndFramework();
+  const [_, signer, sf] = await _getSignerAndFramework();
 
   try {
     if (token.isNative) {
@@ -173,7 +175,7 @@ async function downgradeToken(token, amount) {
     return;
   }
 
-  const [signer, sf] = await _getSignerAndFramework();
+  const [, signer, sf] = await _getSignerAndFramework();
 
   try {
     const supertoken = await sf.loadSuperToken(token.downgradeFrom);
@@ -210,72 +212,33 @@ async function approveUpgrade(token, amount) {
   }
 }
 
-async function fetchBalances(account, onFetchComplete) {
+async function fetchBalances(chainId, account, onFetchComplete) {
   const balances = [
     {
-      unwrappedTokenAddress: "",
-      unwrappedToken: "MATIC",
-      unwrappedTokenBalance: await getNativeBalance(account),
-      wrappedTokenAddress: ADDRESSES.MUMBAI.ADDRESS_MATICX,
-      wrappedToken: "MATICx",
-      wrappedTokenBalance: await getErc20Balance(
-        ADDRESSES.MUMBAI.ADDRESS_MATICX,
-        account
-      ),
-    },
-    {
-      unwrappedTokenAddress: ADDRESSES.MUMBAI.ADDRESS_WETH,
-      unwrappedToken: "WETH",
-      unwrappedTokenBalance: await getErc20Balance(
-        ADDRESSES.MUMBAI.ADDRESS_WETH,
-        account
-      ),
-      wrappedTokenAddress: ADDRESSES.MUMBAI.ADDRESS_MATICX,
-      wrappedToken: "WETHx",
-      wrappedTokenBalance: await getErc20Balance(
-        ADDRESSES.MUMBAI.ADDRESS_WETHX,
-        account
-      ),
-    },
-    // {
-    //   unwrappedTokenAddress: ADDRESSES.MUMBAI.ADDRESS_WBTC,
-    //   unwrappedToken: "WBTC",
-    //   unwrappedTokenBalance: await getErc20Balance(
-    //     ADDRESSES.MUMBAI.ADDRESS_WBTC,
-    //     account
-    //   ),
-    //   wrappedTokenAddress: ADDRESSES.MUMBAI.ADDRESS_WBTCX,
-    //   wrappedToken: "WBTCx",
-    //   wrappedTokenBalance: await getErc20Balance(
-    //     ADDRESSES.MUMBAI.ADDRESS_WBTCX,
-    //     account
-    //   ),
-    // },
-    {
-      unwrappedTokenAddress: ADDRESSES.MUMBAI.ADDRESS_FDAI,
+      unwrappedTokenAddress: ADDRESSES[chainId].ADDRESS_FDAI,
       unwrappedToken: "FDAI",
       unwrappedTokenBalance: await getErc20Balance(
-        ADDRESSES.MUMBAI.ADDRESS_FDAI,
+        ADDRESSES[chainId].ADDRESS_FDAI,
         account
       ),
-      wrappedTokenAddress: ADDRESSES.MUMBAI.ADDRESS_MATICX,
+      wrappedTokenAddress: ADDRESSES[chainId].ADDRESS_FDAIX,
       wrappedToken: "FDAIx",
       wrappedTokenBalance: await getErc20Balance(
-        ADDRESSES.MUMBAI.ADDRESS_FDAIX,
+        ADDRESSES[chainId].ADDRESS_FDAIX,
         account
       ),
     },
     {
-      unwrappedTokenAddress: ADDRESSES.MUMBAI.ADDRESS_FUSDC,
-      unwrappedToken: "FUSDC",
+      unwrappedTokenAddress: ADDRESSES[chainId].ADDRESS_ETHGX,
+      unwrappedToken: "ETHGx",
       unwrappedTokenBalance: await getErc20Balance(
-        ADDRESSES.MUMBAI.ADDRESS_FUSDC,
+        ADDRESSES[chainId].ADDRESS_ETHGX,
         account
       ),
-      wrappedTokenAddress: ADDRESSES.MUMBAI.ADDRESS_MATICX,
-      wrappedToken: "FUSDCx",
+      wrappedTokenAddress: ADDRESSES[chainId].ADDRESS_ETHGX,
+      wrappedToken: "ETHGx",
       wrappedTokenBalance: await getErc20Balance(
-        ADDRESSES.MUMBAI.ADDRESS_FUSDCX,
+        ADDRESSES[chainId].ADDRESS_ETHGX,
         account
       ),
     },
@@ -320,10 +283,10 @@ function BalancesList({ balances }) {
   );
 }
 
-function TokenUpDownGrader() {
+function TokenUpDownGrader({ chainId }) {
   const [amount, setAmount] = useState(0);
   const [selectedOptionIdx, setSelectedOptionIdx] = useState(
-    OPTIONS_TOKEN_WRAPS[0].value
+    getWrapTokensOptions(chainId)[0].value
   );
 
   const renderOptions = (options) => {
@@ -337,26 +300,32 @@ function TokenUpDownGrader() {
   return (
     <div style={{ margin: "5rem 0" }}>
       <select onChange={(e) => setSelectedOptionIdx(e.target.value)}>
-        {renderOptions(OPTIONS_TOKEN_WRAPS)}
+        {renderOptions(getWrapTokensOptions(chainId))}
       </select>
       <input type="number" onChange={(e) => setAmount(e.target.value)} />
       <button
         onClick={async () =>
-          approveUpgrade(OPTIONS_TOKEN_WRAPS[selectedOptionIdx], amount)
+          approveUpgrade(
+            getWrapTokensOptions(chainId)[selectedOptionIdx],
+            amount
+          )
         }
       >
         approve upgrade
       </button>
       <button
         onClick={async () =>
-          upgradeToken(OPTIONS_TOKEN_WRAPS[selectedOptionIdx], amount)
+          upgradeToken(getWrapTokensOptions(chainId)[selectedOptionIdx], amount)
         }
       >
         upgrade
       </button>
       <button
         onClick={async () =>
-          downgradeToken(OPTIONS_TOKEN_WRAPS[selectedOptionIdx], amount)
+          downgradeToken(
+            getWrapTokensOptions(chainId)[selectedOptionIdx],
+            amount
+          )
         }
       >
         downgrade
@@ -365,13 +334,11 @@ function TokenUpDownGrader() {
   );
 }
 
-function Wallet({ account, connectWallet }) {
-  const [srcToken] = useState(OPTIONS_SOURCE_TOKEN[0].value);
-  const [targetToken] = useState(OPTIONS_TARGET_TOKEN[0].value);
+function Wallet({ chainId, account, connectWallet }) {
   const [balances, setBalances] = useState([]);
 
   useEffect(() => {
-    if (account) fetchBalances(account, setBalances);
+    if (account) fetchBalances(chainId, account, setBalances);
   }, [account]);
 
   return (
@@ -399,7 +366,7 @@ function Wallet({ account, connectWallet }) {
 
       <BalancesList balances={balances} />
 
-      <TokenUpDownGrader />
+      <TokenUpDownGrader chainId={chainId} />
 
       {/* CFA */}
       {/* <div style={{ margin: "5rem 0" }}>
@@ -451,7 +418,7 @@ function Wallet({ account, connectWallet }) {
             "https://console.superfluid.finance/" +
             "mumbai" +
             "/accounts/" +
-            ADDRESSES.MUMBAI.ADDRESS_DCA_SUPERAPP
+            ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP
           }
           target="_blank"
           rel="noreferrer"
