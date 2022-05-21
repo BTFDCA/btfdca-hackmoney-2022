@@ -4,9 +4,9 @@ import {
   OPTIONS_CADENCE,
   getSourceTokenOptions,
   getTargetTokenOptions,
-  getSignerAndFramework,
-} from "./configs";
-import { ADDRESSES } from "./constants";
+} from "./config/options";
+import { ADDRESSES } from "./config/constants";
+import { getSignerAndFramework } from "./helpers/sf";
 
 import "./Main.css";
 
