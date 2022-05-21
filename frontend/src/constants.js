@@ -10,6 +10,7 @@ const ADDRESSES = {
 
     ADDRESS_FDAI: `${process.env.REACT_APP_LOCAL_ADDRESS_FDAI}`,
     ADDRESS_FDAIX: `${process.env.REACT_APP_LOCAL_ADDRESS_FDAIX}`,
+    ADDRESS_ETHG: `${process.env.REACT_APP_LOCAL_ADDRESS_ETHG}`,
     ADDRESS_ETHGX: `${process.env.REACT_APP_LOCAL_ADDRESS_ETHGX}`,
   },
   // polygon mumbai
@@ -23,6 +24,7 @@ const ADDRESSES = {
 
     ADDRESS_FDAI: `${process.env.REACT_APP_MUMBAI_ADDRESS_FDAI}`,
     ADDRESS_FDAIX: `${process.env.REACT_APP_MUMBAI_ADDRESS_FDAIX}`,
+    // ADDRESS_ETHG: `${process.env.REACT_APP_MUMBAI_ADDRESS_ETHG}`,
     ADDRESS_ETHGX: `${process.env.REACT_APP_MUMBAI_ADDRESS_ETHGX}`,
   },
 };

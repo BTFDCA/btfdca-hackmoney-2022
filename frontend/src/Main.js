@@ -1,10 +1,10 @@
-import { Framework } from "@superfluid-finance/sdk-core";
 import { ethers } from "ethers";
 import { useState } from "react";
 import {
   OPTIONS_CADENCE,
   getSourceTokenOptions,
   getTargetTokenOptions,
+  getSignerAndFramework,
 } from "./configs";
 import { ADDRESSES } from "./constants";
 
@@ -18,22 +18,7 @@ async function createDCAFlow(
   cadenceInDays
 ) {
   console.log("Creating the DCA flow");
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const signer = provider.getSigner();
-
-  const chainId = await window.ethereum.request({ method: "eth_chainId" });
-  console.log(`connected to chain ${Number(chainId)}`);
-  // TODO: get addresses for this chain id (resolver)
-  // TODO: if test network, send test params to create, otherwise don't
-  const sf = await Framework.create({
-    chainId: Number(chainId),
-    provider: provider,
-    customSubgraphQueriesEndpoint: "",
-    resolverAddress: ADDRESSES.MUMBAI.ADDRESS_SUPERFLUID_RESOLVER,
-    // dataMode: "WEB3_ONLY",
-    // protocolReleaseVersion: "test",
-  });
-  console.log("got the sf object", sf);
+  const [chainId, signer, sf] = await getSignerAndFramework();
 
   // the amount of source token per second to be streamed from the user to the contract
   const monthlyBuyAmount = amount * (30 / cadenceInDays);
@@ -53,7 +38,7 @@ async function createDCAFlow(
     console.log("user data:", userData);
 
     const createFlowOperation = sf.cfaV1.createFlow({
-      receiver: ADDRESSES.MUMBAI.ADDRESS_DCA_SUPERAPP,
+      receiver: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP,
       flowRate: flowRateInWei.toString(),
       superToken: sourceToken,
       userData: userData,
@@ -183,7 +168,10 @@ function Main({ chainId, account, connectWallet }) {
         {/* TODO: show label of srcToken */}
         <div>
           Your wallet must have at least{" "}
-          {estimateRequiredAmount(buyAmount, buyCadence)} {srcToken} to BTFDCA!
+          {estimateRequiredAmount(buyAmount, buyCadence)} {srcToken} to start
+          BTFDCA!
+          {/* TODO: which will last 4 hours etc */}
+          {/* TODO: and you can top up the rest later */}
         </div>
         <div>
           we're using superfluid, so you need to wrap your token into tokenx.

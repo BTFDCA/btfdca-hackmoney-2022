@@ -1,42 +1,15 @@
-import { Framework } from "@superfluid-finance/sdk-core";
 import { ethers } from "ethers";
 import { useEffect, useState } from "react";
 import { supertokenAbi } from "./abis/supertoken";
 import { erc20abi } from "./abis/erc20";
-import {
-  getSourceTokenOptions,
-  getTargetTokenOptions,
-  getWrapTokensOptions,
-} from "./configs";
+import { getSignerAndFramework, getWrapTokensOptions } from "./configs";
 import { ADDRESSES, SF_DISTRIBUTION_SUBSCRIPTION_IDX } from "./constants";
 
 import "./Wallet.css";
 
-async function _getSignerAndFramework() {
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const signer = provider.getSigner();
-
-  const chainId = Number(
-    await window.ethereum.request({ method: "eth_chainId" })
-  );
-  // TODO: get addresses for this chain id (resolver)
-  // TODO: if test network, send test params to create, otherwise don't
-  const sf = await Framework.create({
-    chainId: chainId,
-    provider: provider,
-    customSubgraphQueriesEndpoint: "",
-    resolverAddress: ADDRESSES[chainId].ADDRESS_SUPERFLUID_RESOLVER,
-    // dataMode: "WEB3_ONLY",
-    // protocolReleaseVersion: "test",
-  });
-  console.log("[wallet] got the sf object");
-
-  return [chainId, signer, sf];
-}
-
 async function getFlow(sender, token) {
   console.log("[wallet] getting flow details for", sender, "and", token);
-  const [chainId, signer, sf] = await _getSignerAndFramework();
+  const [chainId, signer, sf] = await getSignerAndFramework();
 
   // start streaming the tokens from the user to the dca superapp contract
   try {
@@ -58,13 +31,13 @@ async function getClaimDetails(sender, targetToken) {
     sender,
     targetToken
   );
-  const [chainId, signer, sf] = await _getSignerAndFramework();
+  const [chainId, signer, sf] = await getSignerAndFramework();
 
   try {
     console.log("getting the subscription");
     const subscription = await sf.idaV1.getSubscription({
       publisher: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP,
-      indexId: 0, // TODO: change
+      indexId: SF_DISTRIBUTION_SUBSCRIPTION_IDX,
       superToken: targetToken,
       subscriber: sender,
       providerOrSigner: signer,
@@ -78,12 +51,12 @@ async function getClaimDetails(sender, targetToken) {
 
 async function claim(sender, targetToken) {
   console.log("claiming rewards!");
-  const [chainId, signer, sf] = await _getSignerAndFramework();
+  const [chainId, signer, sf] = await getSignerAndFramework();
 
   try {
     const claimOperation = await sf.idaV1.claim({
       publisher: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP,
-      indexId: 0, // TODO: change
+      indexId: SF_DISTRIBUTION_SUBSCRIPTION_IDX,
       superToken: targetToken,
       subscriber: sender,
     });
@@ -96,23 +69,24 @@ async function claim(sender, targetToken) {
   }
 }
 
-async function approveSubscription(token) {
-  console.log("approving subscription to", token);
-  const [chainId, , sf] = await _getSignerAndFramework();
+async function approveSubscription(targetToken) {
+  console.log("approving subscription to", targetToken);
+  const [chainId, signer, sf] = await getSignerAndFramework();
 
   try {
-    const result = await sf.idaV1.approveSubscription({
+    const subscriptionApprovalOp = await sf.idaV1.approveSubscription({
       indexId: SF_DISTRIBUTION_SUBSCRIPTION_IDX,
-      superToken: token,
+      superToken: targetToken,
       publisher: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP,
     });
+    console.log("approval operation", subscriptionApprovalOp);
+
+    const result = await subscriptionApprovalOp.exec(signer);
     console.log("subscription approved", result);
   } catch (error) {
     console.error(error);
   }
 }
-
-// ----------------------------------------------------------------
 
 async function getNativeBalance(walletAddress) {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -120,6 +94,8 @@ async function getNativeBalance(walletAddress) {
 
   return ethers.utils.formatEther(balance);
 }
+
+// ----------------------------------------------------------------
 
 async function getErc20Balance(tokenAddress, walletAddress) {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -140,7 +116,7 @@ async function upgradeToken(token, amount) {
     return;
   }
 
-  const [_, signer, sf] = await _getSignerAndFramework();
+  const [_, signer, sf] = await getSignerAndFramework();
 
   try {
     if (token.isNative) {
@@ -175,7 +151,7 @@ async function downgradeToken(token, amount) {
     return;
   }
 
-  const [, signer, sf] = await _getSignerAndFramework();
+  const [, signer, sf] = await getSignerAndFramework();
 
   try {
     const supertoken = await sf.loadSuperToken(token.downgradeFrom);
@@ -213,6 +189,7 @@ async function approveUpgrade(token, amount) {
 }
 
 async function fetchBalances(chainId, account, onFetchComplete) {
+  // TODO: this should be more dynamic, by creating the structure based on getSource/TargetTokens
   const balances = [
     {
       unwrappedTokenAddress: ADDRESSES[chainId].ADDRESS_FDAI,
@@ -228,6 +205,20 @@ async function fetchBalances(chainId, account, onFetchComplete) {
         account
       ),
     },
+    // {
+    //   unwrappedTokenAddress: ADDRESSES[chainId].ADDRESS_ETHG,
+    //   unwrappedToken: "ETHG",
+    //   unwrappedTokenBalance: await getErc20Balance(
+    //     ADDRESSES[chainId].ADDRESS_ETHG,
+    //     account
+    //   ),
+    //   wrappedTokenAddress: ADDRESSES[chainId].ADDRESS_ETHGX,
+    //   wrappedToken: "ETHGx",
+    //   wrappedTokenBalance: await getErc20Balance(
+    //     ADDRESSES[chainId].ADDRESS_ETHGX,
+    //     account
+    //   ),
+    // },
     {
       unwrappedTokenAddress: ADDRESSES[chainId].ADDRESS_ETHGX,
       unwrappedToken: "ETHGx",
@@ -339,7 +330,7 @@ function Wallet({ chainId, account, connectWallet }) {
 
   useEffect(() => {
     if (account) fetchBalances(chainId, account, setBalances);
-  }, [account]);
+  }, [chainId, account]);
 
   return (
     <div>
@@ -381,11 +372,11 @@ function Wallet({ chainId, account, connectWallet }) {
       </div> */}
 
       {/* IDA */}
-      {/* <div style={{ margin: "5rem 0" }}>
+      <div style={{ margin: "5rem 0" }}>
         <button
           style={{ marginLeft: "1rem" }}
           onClick={async () => {
-            getClaimDetails(account, targetToken);
+            getClaimDetails(account, ADDRESSES[chainId].ADDRESS_ETHGX);
           }}
         >
           get distribution details!
@@ -393,7 +384,7 @@ function Wallet({ chainId, account, connectWallet }) {
         <button
           style={{ marginLeft: "1rem" }}
           onClick={async () => {
-            claim(account, targetToken);
+            claim(account, ADDRESSES[chainId].ADDRESS_ETHGX);
           }}
         >
           claim!
@@ -403,12 +394,12 @@ function Wallet({ chainId, account, connectWallet }) {
         <button
           style={{ marginLeft: "1rem" }}
           onClick={async () => {
-            approveSubscription(account, targetToken);
+            approveSubscription(ADDRESSES[chainId].ADDRESS_ETHGX);
           }}
         >
           approve subscription to weth!
         </button>
-      </div> */}
+      </div>
 
       {/* contract's superfluid dashboard */}
       <div style={{ margin: "5rem 0" }}>
