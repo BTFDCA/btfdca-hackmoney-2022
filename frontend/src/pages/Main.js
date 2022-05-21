@@ -4,11 +4,11 @@ import {
   OPTIONS_CADENCE,
   getSourceTokenOptions,
   getTargetTokenOptions,
-} from "./config/options";
-import { ADDRESSES } from "./config/constants";
-import { getSignerAndFramework } from "./helpers/sf";
+} from "../config/options";
+import { ADDRESSES } from "../config/constants";
+import { getSignerAndFramework } from "../helpers/sf";
 
-import "./Main.css";
+import "../styles/Main.css";
 
 async function createDCAFlow(
   sender,
@@ -109,9 +109,6 @@ function Main({ chainId, account, connectWallet }) {
 
   return (
     <div>
-      <div>
-        <a href="/wallet">Wallet</a>
-      </div>
       {/* logo stuff */}
       <div className="logoWrapper">
         <div>Buy Crypto Assets the Smart Way!</div>

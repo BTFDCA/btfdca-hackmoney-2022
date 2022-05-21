@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
-import Wallet from "./Wallet";
-import Main from "./Main";
+import Wallet from "./pages/Wallet";
+import Main from "./pages/Main";
 
-import "./index.css";
+import "./styles/index.css";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 
 const container = document.getElementById("root");
 const root = createRoot(container);
@@ -64,6 +66,7 @@ function App() {
 
   return (
     <div className="App">
+      <Header account={account} />
       <BrowserRouter>
         <Routes>
           <Route
@@ -89,12 +92,7 @@ function App() {
         </Routes>
       </BrowserRouter>
 
-      {/* TODO: footer component */}
-      <div className="">
-        <a href="https://banner-nfts.com">
-          Yo, help a brother out. Go mint my NFT!
-        </a>
-      </div>
+      <Footer />
     </div>
   );
 }

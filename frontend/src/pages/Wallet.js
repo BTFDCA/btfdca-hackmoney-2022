@@ -1,18 +1,14 @@
-import { ADDRESSES } from "./config/constants";
-import BalancesList from "./components/BalancesList";
-import SubscriptionApprover from "./components/SubscriptionApprover";
-import TokenDowngrader from "./components/TokenDowngrader";
-import TokenUpgrader from "./components/TokenUpgrader";
+import { ADDRESSES } from "../config/constants";
+import BalancesList from "../components/BalancesList";
+import SubscriptionApprover from "../components/SubscriptionApprover";
+import TokenDowngrader from "../components/TokenDowngrader";
+import TokenUpgrader from "../components/TokenUpgrader";
 
-import "./Wallet.css";
+import "../styles/Wallet.css";
 
 function Wallet({ chainId, account, connectWallet }) {
   return (
     <div>
-      <div style={{ margin: "2.5rem 0rem 5rem" }}>
-        <a href="/">Go Back!</a>
-      </div>
-
       <BalancesList chainId={chainId} account={account} />
 
       <TokenUpgrader chainId={chainId} />
