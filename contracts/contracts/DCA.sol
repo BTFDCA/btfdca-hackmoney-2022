@@ -245,7 +245,7 @@ contract DCA is SuperAppBase {
         address inTokenAddress,
         address outTokenAddress,
         uint256 amountSpent
-    ) internal returns (uint256 amountReceived) {
+    ) external returns (uint256 amountReceived) {
         // TODO: doing trade on  uniswap, but ideally call a proxy
         console.log("swap it!");
         console.log("from", inTokenAddress);
