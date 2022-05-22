@@ -3,8 +3,24 @@ import { useState } from "react";
 
 import { erc20abi } from "../abis/erc20";
 import { supertokenAbi } from "../abis/supertoken";
-import { getWrapTokensOptions } from "../config/options";
+import { ADDRESSES } from "../config/constants";
 import { getSignerAndFramework } from "../helpers/sf";
+
+const getWrapTokensOptions = (chainId) => {
+  return [
+    {
+      label: "FDAI",
+      value: 0,
+      address: ADDRESSES[chainId].ADDRESS_FDAI,
+      upgradeTo: ADDRESSES[chainId].ADDRESS_FDAIX,
+    },
+    // {
+    //   label: "ETHG",
+    //   value: 2,
+    //   address: ADDRESSES[chainId].ADDRESS_ETHG,
+    // },
+  ];
+};
 
 async function approveUpgrade(token, amount) {
   console.log("approving upgrade", amount, "of", token);
@@ -34,7 +50,7 @@ async function upgradeToken(token, amount) {
     return;
   }
 
-  const [_, signer, sf] = await getSignerAndFramework();
+  const [, signer, sf] = await getSignerAndFramework();
 
   try {
     if (token.isNative) {
@@ -49,9 +65,13 @@ async function upgradeToken(token, amount) {
     } else {
       console.log("erc20 upgrade");
       const supertoken = await sf.loadSuperToken(token.upgradeTo);
+      console.log("loaded the supertoken");
+
+      console.log("calling upgrade");
       const upgradeOperation = supertoken.upgrade({
         amount: ethers.utils.parseEther(amount.toString()),
       });
+      console.log("executing the upgrade");
       const upgradeTxn = await upgradeOperation.exec(signer);
       await upgradeTxn.wait().then(function (tx) {
         console.log("upgraded erc20");
@@ -64,41 +84,68 @@ async function upgradeToken(token, amount) {
 
 function TokenUpgrader({ chainId }) {
   const [amount, setAmount] = useState(0);
-  const [selectedOptionIdx, setSelectedOptionIdx] = useState(
-    getWrapTokensOptions(chainId)[0].value
-  );
-
-  const renderOptions = (options) => {
-    return options.map((opt) => (
-      <option key={opt.label} value={opt.value}>
-        {opt.label}
-      </option>
-    ));
-  };
+  const [selectedOptionIdx] = useState(getWrapTokensOptions(chainId)[0].value);
 
   return (
-    <div style={{ margin: "5rem 0" }}>
-      <select onChange={(e) => setSelectedOptionIdx(e.target.value)}>
-        {renderOptions(getWrapTokensOptions(chainId))}
-      </select>
-      <input type="number" onChange={(e) => setAmount(e.target.value)} />
-      <button
-        onClick={async () =>
-          approveUpgrade(
-            getWrapTokensOptions(chainId)[selectedOptionIdx],
-            amount
-          )
-        }
-      >
-        approve upgrade
-      </button>
-      <button
-        onClick={async () =>
-          upgradeToken(getWrapTokensOptions(chainId)[selectedOptionIdx], amount)
-        }
-      >
-        upgrade
-      </button>
+    <div className="tokenUpgrader">
+      <h5>🔼 Upgrade ERC20 to SuperToken</h5>
+      <div className="input-group mt-5 mb-4">
+        <button
+          className="btn btn-outline-secondary dropdown-toggle"
+          type="button"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+          // onClick={(e) => setSelectedOptionIdx(e.target.value)}
+        >
+          {getWrapTokensOptions(chainId)[0].label}
+        </button>
+        <ul className="dropdown-menu"></ul>
+
+        {/* TODO: negative values, etc */}
+        <input
+          className="form-control"
+          aria-label="Text input with dropdown button"
+          type="number"
+          min="0"
+          step="10"
+          placeholder="How much to upgrade?"
+          onChange={(e) => setAmount(e.target.value)}
+        />
+        {/* TODO: max button with fdai balance */}
+      </div>
+
+      {/* TODO: if not approved, etc */}
+      {/* TODO: disable if balance == 0 */}
+      <div className="hstack gap-3">
+        <button
+          type="button"
+          className="btn btn-outline-primary  ms-auto"
+          aria-current="page"
+          onClick={async () =>
+            approveUpgrade(
+              getWrapTokensOptions(chainId)[selectedOptionIdx],
+              amount
+            )
+          }
+        >
+          Approve
+        </button>
+
+        <div className="vr"></div>
+
+        <button
+          type="button"
+          className="btn btn-outline-primary"
+          onClick={async () =>
+            upgradeToken(
+              getWrapTokensOptions(chainId)[selectedOptionIdx],
+              amount
+            )
+          }
+        >
+          Upgrade
+        </button>
+      </div>
     </div>
   );
 }

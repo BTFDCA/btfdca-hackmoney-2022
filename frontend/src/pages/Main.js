@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   OPTIONS_CADENCE,
   getSourceTokenOptions,
@@ -27,7 +28,7 @@ async function createDCAFlow(
   const flowRateInWei = ethers.utils.parseEther(flowRateInEth.toFixed(18));
   console.log("flow rate:", flowRateInWei.toString());
 
-  const amountInWei = ethers.utils.parseEther(amount);
+  const amountInWei = ethers.utils.parseEther(amount.toString());
   console.log("amount per day in wei", amountInWei.toString());
 
   // start streaming the tokens from the user to the dca superapp contract
@@ -60,7 +61,7 @@ function estimateRequiredAmount(amount, cadenceInDays) {
     const cadenceInHours = cadenceInDays * 24;
     const amountPerHour = amount / cadenceInHours;
 
-    let escrowHours = 4; // TODO: if testnet == 1, else == 4
+    let escrowHours = 4; // if testnet == 1, else == 4
     const requiredEscrow = amountPerHour * escrowHours;
 
     return requiredEscrow.toFixed(2);
@@ -70,10 +71,14 @@ function estimateRequiredAmount(amount, cadenceInDays) {
 }
 
 function Main({ chainId, account, connectWallet }) {
+  console.log("hello main");
+
+  const navigate = useNavigate();
   const [buyAmount, setBuyAmount] = useState(0);
   const [srcToken] = useState(getSourceTokenOptions(chainId)[0]);
   const [targetToken] = useState(getTargetTokenOptions(chainId)[0]);
   const [buyCadence] = useState(OPTIONS_CADENCE[0]);
+  const [dcaError, setDcaError] = useState();
 
   const [requiredAmount, setRequiredAmount] = useState("");
   const [fDaixBalance, setfDaixBalance] = useState(0);
@@ -87,18 +92,28 @@ function Main({ chainId, account, connectWallet }) {
   };
 
   const setupDCAFlow = async () => {
+    setDcaError(null);
     console.log(
-      `setup an agreement to trade ${buyAmount} ${srcToken} for ${targetToken} every ${buyCadence} day(s)`
+      `setup an agreement to trade ${buyAmount} ${srcToken.label} for ${targetToken.label} every ${buyCadence.label} day(s)`
     );
+
     // create the superfluid stream, etc
-    createDCAFlow(account, buyAmount, srcToken, targetToken, buyCadence).then(
-      (r) => {
-        console.log("TODO: stuff");
-        // TODO:
-        // redirect the user somewhere if DCA is set up
-        // show an error message if something goes wrong
+    createDCAFlow(
+      account,
+      buyAmount,
+      srcToken.value,
+      targetToken.value,
+      buyCadence.value
+    ).then((r) => {
+      console.log(r);
+      if (r) {
+        console.log("success!");
+        setDcaError(false);
+        navigate("/success");
+      } else {
+        setDcaError(true);
       }
-    );
+    });
   };
 
   useEffect(() => {
@@ -159,8 +174,26 @@ function Main({ chainId, account, connectWallet }) {
 
       {/* error / info messages */}
       <div className="alertWrapper">
-        {buyAmount > 0 ? (
-          buyAmount > requiredAmount ? (
+        {dcaError ? (
+          <div className="alert alert-danger" role="alert">
+            <div>
+              <span className="emoji">☠️</span>
+              <span>Something's wrong and we couldn't BTFDCA 😭</span>
+              <div>Make sure everything is good with your wallet.</div>
+              <div>Note: you cannot have more than 1 BTFDCA active.</div>
+            </div>
+            <div>
+              <a
+                href="https://app.superfluid.finance/dashboard"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Click here for more details.
+              </a>
+            </div>
+          </div>
+        ) : buyAmount > 0 ? (
+          requiredAmount > fDaixBalance ? (
             <div className="alert alert-danger" role="alert">
               <div>
                 <span className="emoji">☠️</span>
@@ -181,12 +214,16 @@ function Main({ chainId, account, connectWallet }) {
             </div>
           ) : (
             <div className="alert alert-secondary" role="alert">
-              <span className="emoji">ℹ️</span>
-              <span>
-                {requiredAmount} {srcToken.label} will be initially reserved for
-                the DCA and streamed to us in real-time. Make sure your wallet
-                does not run out of {srcToken.label}!
-              </span>
+              <div>
+                <span className="emoji">ℹ️</span>
+                <span>
+                  {requiredAmount} {srcToken.label} will be initially reserved
+                  for the DCA and streamed to us in real-time.
+                </span>
+              </div>
+              <div>
+                Make sure your wallet does not run out of {srcToken.label}!
+              </div>
             </div>
           )
         ) : (
@@ -194,6 +231,7 @@ function Main({ chainId, account, connectWallet }) {
         )}
       </div>
 
+      {/* TODO: disable if there's already an active BTFDCA */}
       {/* action buttons */}
       <div className="lfgWrapper">
         {account === "" ? (
@@ -209,7 +247,7 @@ function Main({ chainId, account, connectWallet }) {
           <button
             id="lfgButton"
             onClick={setupDCAFlow}
-            disabled={buyAmount <= 0 || fDaixBalance < buyAmount}
+            disabled={buyAmount <= 0 || fDaixBalance < requiredAmount}
             type="button"
             className="btn btn-outline-success"
           >

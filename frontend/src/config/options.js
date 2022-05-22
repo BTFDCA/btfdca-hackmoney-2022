@@ -13,35 +13,4 @@ const getTargetTokenOptions = (chainId) => {
 
 const OPTIONS_CADENCE = [{ label: "day", value: "1" }];
 
-const getWrapTokensOptions = (chainId) => {
-  return [
-    {
-      label: "FDAI",
-      value: 0,
-      address: ADDRESSES[chainId].ADDRESS_FDAI,
-      upgradeTo: ADDRESSES[chainId].ADDRESS_FDAI,
-    },
-    {
-      label: "FDAIx",
-      value: 1,
-      downgradeFrom: ADDRESSES[chainId].ADDRESS_FDAIX,
-    },
-    {
-      label: "ETHG",
-      value: 2,
-      address: ADDRESSES[chainId].ADDRESS_ETHG,
-    },
-    {
-      label: "ETHGx",
-      value: 3,
-      address: ADDRESSES[chainId].ADDRESS_ETHGX,
-    },
-  ];
-};
-
-export {
-  getWrapTokensOptions,
-  getSourceTokenOptions,
-  getTargetTokenOptions,
-  OPTIONS_CADENCE,
-};
+export { getSourceTokenOptions, getTargetTokenOptions, OPTIONS_CADENCE };

@@ -1,8 +1,23 @@
 import { ethers } from "ethers";
 import { useState } from "react";
+import { ADDRESSES } from "../config/constants";
 
-import { getWrapTokensOptions } from "../config/options";
 import { getSignerAndFramework } from "../helpers/sf";
+
+const getWrapTokensOptions = (chainId) => {
+  return [
+    {
+      label: "FDAIx",
+      value: 1,
+      downgradeFrom: ADDRESSES[chainId].ADDRESS_FDAIX,
+    },
+    // {
+    //   label: "ETHGx",
+    //   value: 3,
+    //   address: ADDRESSES[chainId].ADDRESS_ETHGX,
+    // },
+  ];
+};
 
 async function downgradeToken(token, amount) {
   console.log("downgrade", amount, "of", token);
@@ -29,35 +44,50 @@ async function downgradeToken(token, amount) {
 
 function TokenDowngrader({ chainId }) {
   const [amount, setAmount] = useState(0);
-  const [selectedOptionIdx, setSelectedOptionIdx] = useState(
-    getWrapTokensOptions(chainId)[0].value
-  );
-
-  const renderOptions = (options) => {
-    return options.map((opt) => (
-      <option key={opt.label} value={opt.value}>
-        {opt.label}
-      </option>
-    ));
-  };
+  // const [selectedOptionIdx] = useState(getWrapTokensOptions(chainId)[0].value);
 
   return (
-    <div style={{ margin: "5rem 0" }}>
-      <select onChange={(e) => setSelectedOptionIdx(e.target.value)}>
-        {renderOptions(getWrapTokensOptions(chainId))}
-      </select>
-      <input type="number" onChange={(e) => setAmount(e.target.value)} />
+    <div className="tokenDowngrader">
+      <h5>🔽 Downgrade SuperToken to ERC20</h5>
 
-      <button
-        onClick={async () =>
-          downgradeToken(
-            getWrapTokensOptions(chainId)[selectedOptionIdx],
-            amount
-          )
-        }
-      >
-        downgrade
-      </button>
+      <div className="input-group mt-5 mb-4">
+        <button
+          className="btn btn-outline-secondary dropdown-toggle"
+          type="button"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+          // onClick={(e) => setSelectedOptionIdx(e.target.value)}
+        >
+          {getWrapTokensOptions(chainId)[0].label}
+        </button>
+        <ul className="dropdown-menu"></ul>
+
+        {/* TODO: negative values, etc */}
+        <input
+          className="form-control"
+          aria-label="Text input with dropdown button"
+          type="number"
+          min="0"
+          step="10"
+          placeholder="How much to downgrade?"
+          onChange={(e) => setAmount(e.target.value)}
+        />
+        {/* TODO: max button with fdai balance */}
+      </div>
+
+      {/* TODO: disable if balance == 0 */}
+      <div className="hstack">
+        <button
+          type="button"
+          className="btn btn-outline-primary  ms-auto"
+          aria-current="page"
+          onClick={async () =>
+            downgradeToken(getWrapTokensOptions(chainId)[0], amount)
+          }
+        >
+          Downgrade
+        </button>
+      </div>
     </div>
   );
 }

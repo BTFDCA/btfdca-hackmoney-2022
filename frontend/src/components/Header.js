@@ -7,6 +7,11 @@ function Header({ chainId, account }) {
 
   useEffect(() => {
     if (account) {
+      console.log(
+        "fetching erc 20 balance",
+        ADDRESSES[chainId].ADDRESS_FDAIX,
+        account
+      );
       getErc20Balance(ADDRESSES[chainId].ADDRESS_FDAIX, account).then((v) => {
         setfDaixBalance(v);
       });

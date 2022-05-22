@@ -8,6 +8,7 @@ import Main from "./pages/Main";
 import "./styles/index.css";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import Success from "./pages/Success";
 
 const container = document.getElementById("root");
 const root = createRoot(container);
@@ -90,11 +91,21 @@ function App() {
                 />
               }
             />
+            <Route
+              path="/success"
+              element={
+                <Success
+                  chainId={chainId}
+                  account={account}
+                  connectWallet={connectWallet}
+                />
+              }
+            />
           </Routes>
         </BrowserRouter>
       </div>
 
-      <Footer />
+      <Footer chainId={chainId} />
     </div>
   );
 }

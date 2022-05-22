@@ -53,46 +53,55 @@ async function fetchBalances(chainId, account, onFetchComplete) {
   onFetchComplete(balances);
 }
 
-function BalancesList({ chainId, account }) {
-  const [balances, setBalances] = useState([]);
+function Balances({ chainId, account }) {
+  const [balances, setBalances] = useState();
 
   useEffect(() => {
     if (account) fetchBalances(chainId, account, setBalances);
   }, [chainId, account]);
 
   const _renderBalanceRows = (bals) => {
-    let balanceRows = [];
+    if (balances) {
+      let balanceRows = [];
+      for (let i = 0; i < bals.length; i++) {
+        const bal = bals[i];
 
-    for (let i = 0; i < bals.length; i++) {
-      const bal = bals[i];
+        balanceRows.push(
+          <tr key={"balance-row-" + i}>
+            <td>{bal.unwrappedToken}</td>
+            <td>{bal.unwrappedTokenBalance}</td>
+            <td>{bal.wrappedToken}</td>
+            <td>{bal.wrappedTokenBalance}</td>
+          </tr>
+        );
+      }
 
-      balanceRows.push(
-        <div key={"balance-row-" + i} className="balanceRow">
-          <span>{bal.unwrappedToken}</span>
-          <span>{bal.unwrappedTokenBalance}</span>
-          <span>{bal.wrappedToken}</span>
-          <span>{bal.wrappedTokenBalance}</span>
-        </div>
+      return balanceRows;
+    } else {
+      return (
+        <tr>
+          <td colSpan="4">Loading...</td>
+        </tr>
       );
     }
-
-    return balanceRows;
   };
 
   return (
-    <div>
-      <div>Balances</div>
-      <div>
-        <div className="balanceRowTitle">
-          <span>Unwrapped</span>
-          <span>Balance</span>
-          <span>Wrapped</span>
-          <span>Balance</span>
-        </div>
-        {_renderBalanceRows(balances)}
-      </div>
+    <div className="balances">
+      <h4 className="balancesTitle">Your Balances</h4>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Unwrapped</th>
+            <th>Balance</th>
+            <th>Wrapped</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody>{_renderBalanceRows(balances)}</tbody>
+      </table>
     </div>
   );
 }
 
-export default BalancesList;
+export default Balances;

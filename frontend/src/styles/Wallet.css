@@ -1,8 +1,32 @@
-.balanceRowTitle {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+.wallet {
+  text-align: left;
 }
-.balanceRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+
+.gotoSuccess {
+  max-width: 75%;
+  margin: 2rem auto;
+  /* font-size:  */
+}
+
+.balances {
+  max-width: 75%;
+  margin: 5rem auto;
+}
+
+.balancesTitle {
+  margin-bottom: 1rem;
+}
+
+.supertokenOperations {
+  margin: 5rem 0;
+}
+
+.tokenUpgrader,
+.tokenDowngrader {
+  margin: 0 auto;
+}
+
+.superfluid {
+  margin: 5rem auto;
+  max-width: 75%;
 }
