@@ -7,6 +7,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+a {
+  text-decoration: none;
+}
+
 .App {
   text-align: center;
+  min-height: 100%;
+}
+
+footer {
+  margin-top: 5rem;
+}
+.footer-content {
+  text-align: center;
+  padding: 2rem 0;
+  font-size: 0.8rem;
+}
+footer .separator {
+  margin: 0 1rem;
 }

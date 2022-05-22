@@ -65,32 +65,34 @@ function App() {
   }, []);
 
   return (
-    <div className="App">
-      <Header account={account} />
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <Main
-                chainId={chainId}
-                account={account}
-                connectWallet={connectWallet}
-              />
-            }
-          />
-          <Route
-            path="/wallet"
-            element={
-              <Wallet
-                chainId={chainId}
-                account={account}
-                connectWallet={connectWallet}
-              />
-            }
-          />
-        </Routes>
-      </BrowserRouter>
+    <div>
+      <Header chainId={chainId} account={account} />
+      <div className="App">
+        <BrowserRouter>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <Main
+                  chainId={chainId}
+                  account={account}
+                  connectWallet={connectWallet}
+                />
+              }
+            />
+            <Route
+              path="/wallet"
+              element={
+                <Wallet
+                  chainId={chainId}
+                  account={account}
+                  connectWallet={connectWallet}
+                />
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </div>
 
       <Footer />
     </div>
