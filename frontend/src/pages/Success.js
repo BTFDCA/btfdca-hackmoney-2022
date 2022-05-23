@@ -17,7 +17,7 @@ async function getClaimDetails(account, targetToken) {
   const [chainId, signer, sf] = await getSignerAndFramework();
 
   try {
-    console.log("getting the subscription");
+    console.log("getting the subscription", ADDRESSES[chainId]);
     const subscription = await sf.idaV1.getSubscription({
       publisher: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP,
       indexId: SF_DISTRIBUTION_SUBSCRIPTION_IDX,
@@ -37,11 +37,15 @@ function Success({ chainId, account, connectWallet }) {
   const [claimStatus, setClaimStatus] = useState(false);
 
   useEffect(() => {
-    getClaimDetails(account, ADDRESSES[chainId].ADDRESS_ETHGX).then(
-      (subscription) => {
-        setClaimStatus(subscription.exist);
-      }
-    );
+    console.log("[success] account", account);
+    if (account) {
+      getClaimDetails(account, ADDRESSES[chainId].ADDRESS_ETHGX).then(
+        (subscription) => {
+          console.log("[success] subscription in use effect", subscription);
+          setClaimStatus(subscription.exist);
+        }
+      );
+    }
   }, [account, chainId]);
 
   return (
