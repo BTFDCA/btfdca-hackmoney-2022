@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import SubscriptionApprover from "../components/SubscriptionApprover";
 import {
   ADDRESSES,
   SF_DISTRIBUTION_SUBSCRIPTION_IDX,
@@ -42,7 +41,7 @@ function Success({ chainId, account, connectWallet }) {
       getClaimDetails(account, ADDRESSES[chainId].ADDRESS_ETHGX).then(
         (subscription) => {
           console.log("[success] subscription in use effect", subscription);
-          setClaimStatus(subscription.exist);
+          setClaimStatus(true);
         }
       );
     }
@@ -59,11 +58,7 @@ function Success({ chainId, account, connectWallet }) {
             <p>
               Every <code>gm!</code> you will receive your cryptoassets.
             </p>
-            <p>
-              But so that can happen, you need to click the button below 👇🏻 just
-              this one time.
-            </p>
-            <SubscriptionApprover chainId={chainId} />
+            <p>That's all!</p>
           </>
         ) : (
           <>
@@ -79,11 +74,12 @@ function Success({ chainId, account, connectWallet }) {
           </>
         )}
       </div>
+
       <hr />
       {/* link to superfluid's dashboard and console */}
       <div className="superfluid vstack gap-3">
         {/* TODO: get network name from somewhere */}
-        <h4>🖥️ Do more things in Superfluid</h4>
+        <h4>🖥️ Wanna verify that things are working? Check Superfluid</h4>
 
         <div className="sfDash">
           <a
@@ -118,7 +114,7 @@ function Success({ chainId, account, connectWallet }) {
             happening under the hood.
           </p>
         </div>
-      </div>{" "}
+      </div>
     </div>
   );
 }

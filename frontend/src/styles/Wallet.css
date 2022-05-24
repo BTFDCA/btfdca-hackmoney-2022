@@ -2,12 +2,6 @@
   text-align: left;
 }
 
-.gotoSuccess {
-  max-width: 75%;
-  margin: 2rem auto;
-  /* font-size:  */
-}
-
 .balances {
   max-width: 75%;
   margin: 5rem auto;
@@ -27,6 +21,11 @@
 }
 
 .superfluid {
+  margin: 5rem auto;
+  max-width: 75%;
+}
+
+.approval {
   margin: 5rem auto;
   max-width: 75%;
 }

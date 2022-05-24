@@ -31,6 +31,7 @@ function SubscriptionApprover({ chainId }) {
         className="btn btn-outline-primary  ms-auto"
         aria-current="page"
         onClick={async () =>
+          // TODO: go to wallet
           approveSubscription(ADDRESSES[chainId].ADDRESS_ETHGX)
         }
       >

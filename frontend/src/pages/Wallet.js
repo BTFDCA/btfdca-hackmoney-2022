@@ -1,17 +1,22 @@
 import Balances from "../components/Balances";
 import TokenDowngrader from "../components/TokenDowngrader";
 import TokenUpgrader from "../components/TokenUpgrader";
+import SubscriptionApprover from "../components/SubscriptionApprover";
 
 import "../styles/Wallet.css";
 
 function Wallet({ chainId, account, connectWallet }) {
   return (
     <div className="wallet">
-      <div className="gotoSuccess">
-        <a href="/success">You BTFDCA but didn't approve your distribution?</a>
-      </div>
-
       <Balances chainId={chainId} account={account} />
+
+      {/* TODO: only show if not approved */}
+      <div className="approval">
+        <p>
+          In order to get your moneyz, you have to approve the distribution 👇🏻.
+        </p>
+        <SubscriptionApprover chainId={chainId} />
+      </div>
 
       <hr />
 
@@ -20,9 +25,7 @@ function Wallet({ chainId, account, connectWallet }) {
         <div className="vr"></div>
         <TokenDowngrader chainId={chainId} />
       </div>
-
       <hr />
-
       {/* link to superfluid's dashboard and console */}
       <div className="superfluid vstack gap-3">
         {/* TODO: get network name from somewhere */}
