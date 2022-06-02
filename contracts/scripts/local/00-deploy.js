@@ -2,7 +2,7 @@ const hre = require("hardhat");
 
 const { Framework } = require("@superfluid-finance/sdk-core");
 const { ethers, web3 } = require("hardhat");
-const daiABI = require("../../abis/fDAIABI");
+const daiABI = require("./abis/fDAIABI");
 
 const deployFramework = require("@superfluid-finance/ethereum-contracts/scripts/deploy-framework");
 const deployTestToken = require("@superfluid-finance/ethereum-contracts/scripts/deploy-test-token");
@@ -95,7 +95,7 @@ async function main() {
   // --------------------------------------------------------------------------
   // MINT TOKENS TO ACCOUNTS
   // --------------------------------------------------------------------------
-  // use the framework to get the super toen
+  // use the framework to get the super token
   const daix = await sf.loadSuperToken("fDAIx");
   // get the contract object for the erc20 token
   const daiAddress = daix.underlyingToken.address;
@@ -106,7 +106,7 @@ async function main() {
 
   // --------------------------------------------------------------------------
 
-  // use the framework to get the super toen
+  // use the framework to get the super token
   const ethgx = await sf.loadSuperToken("ETHGx");
   // get the contract object for the erc20 token
   const ethgxAddress = ethgx.underlyingToken.address;
@@ -118,11 +118,12 @@ async function main() {
   // DEPLOY THE DCA CONTRACT
   // --------------------------------------------------------------------------
   console.log("deploying DCA");
-  const DCA = await hre.ethers.getContractFactory("DCA");
+  const DCA = await hre.ethers.getContractFactory("DCAPool");
   const dca = await DCA.deploy(
     sf.settings.config.hostAddress,
     sf.settings.config.cfaV1Address,
     sf.settings.config.idaV1Address,
+    123, // ida index
     daix.address,
     ethgx.address,
     "",
@@ -131,6 +132,8 @@ async function main() {
   );
   await dca.deployed();
   console.log("DCA deployed to:", dca.address);
+
+  dca.setPoolConfig(24 * 60 * 60 * 1000, 0, 0, 0);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
