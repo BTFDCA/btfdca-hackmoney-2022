@@ -52,4 +52,7 @@ module.exports = {
   etherscan: {
     apiKey: process.env.POLYGONSCAN_API_KEY,
   },
+  mocha: {
+    timeout: 100000000,
+  },
 };

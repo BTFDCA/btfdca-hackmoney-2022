@@ -12,7 +12,7 @@ contract MockSwapRouter is ISwapRouter {
     function exactInputSingle(
         ISwapRouter.ExactInputSingleParams calldata params
     ) external payable override returns (uint256 amountOut) {
-        // TODO: send some amount of tokenOut to recipient
+        // TODO: transfer amount of tokenOut to recipient
         // params.tokenIn
         // params.tokenOut
         // fee

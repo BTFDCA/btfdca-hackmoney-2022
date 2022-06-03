@@ -4,7 +4,14 @@ const deploySuperToken = require("@superfluid-finance/ethereum-contracts/scripts
 const { Framework } = require("@superfluid-finance/sdk-core");
 const { expect } = require("chai");
 const { ethers, web3 } = require("hardhat");
+
 const erc20abi = require("./abis/ERC20ABI");
+const {
+  fundWithERC20,
+  generateAccounts,
+  upgradeToTokenX,
+} = require("./helpers/Accounts");
+const { mineBlocks } = require("./helpers/Utils");
 
 // TODO: time travelling
 // https://ethereum.stackexchange.com/questions/86633/time-dependent-tests-with-hardhat
@@ -14,7 +21,7 @@ const provider = web3;
 
 let omnifient, alice, bob, mallory;
 let sf, superSigner, dai, daix, btc, btcx;
-let dcaPoolContract;
+let dcaPoolContract, uniswapContract;
 
 const errHandler = (err) => {
   if (err) throw err;
@@ -22,7 +29,13 @@ const errHandler = (err) => {
 
 before(async function () {
   // get accounts from hardhat
-  [omnifient, alice, bob, mallory] = await ethers.getSigners();
+  // [omnifient, alice, bob, mallory] = await ethers.getSigners();
+  [omnifient, alice, bob, mallory] = await generateAccounts([
+    "0x3ee7171FcBEe0FF94889F08b46f1Ca933c142b6E",
+    "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+  ]);
 
   // deploy the framework
   await deployFramework(errHandler, {
@@ -77,7 +90,7 @@ before(async function () {
 
   // deploy a mock for uniswapv3 router
   const RouterFactory = await ethers.getContractFactory("MockSwapRouter");
-  const mockRouter = await RouterFactory.deploy();
+  uniswapContract = await RouterFactory.deploy();
 
   // get the contract
   const DCAPoolFactory = await ethers.getContractFactory("DCAPool");
@@ -89,7 +102,7 @@ before(async function () {
     daix.address,
     btcx.address,
     "",
-    mockRouter.address,
+    uniswapContract.address,
     3000
   );
   await dcaPoolContract.deployed();
@@ -99,22 +112,22 @@ before(async function () {
 });
 
 beforeEach(async function () {
-  await dai.connect(alice).mint(alice.address, ethers.utils.parseEther("1000"));
-  await dai
-    .connect(alice)
-    .approve(daix.address, ethers.utils.parseEther("1000"));
-  const daixUpgradeOperation = daix.upgrade({
-    amount: ethers.utils.parseEther("1000"),
-  });
-  await daixUpgradeOperation.exec(alice);
+  await fundWithERC20(dai, omnifient, omnifient);
+  await upgradeToTokenX(dai, daix, omnifient);
 
-  const daiBal = await daix.balanceOf({
-    account: alice.address,
-    providerOrSigner: superSigner,
-  });
-  console.log("daix bal for acct alice: ", daiBal);
+  await fundWithERC20(dai, omnifient, alice);
+  await upgradeToTokenX(dai, daix, alice);
 
-  // TODO: mint to bob and mallory
+  await fundWithERC20(dai, omnifient, bob);
+  await upgradeToTokenX(dai, daix, bob);
+
+  await fundWithERC20(dai, omnifient, mallory);
+  await upgradeToTokenX(dai, daix, mallory);
+
+  // fund uniswap with btc
+  await fundWithERC20(btc, omnifient, uniswapContract);
+
+  await mineBlocks(1);
 });
 
 describe("CFA", () => {
