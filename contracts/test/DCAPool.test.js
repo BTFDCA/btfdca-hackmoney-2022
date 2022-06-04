@@ -11,7 +11,9 @@ const {
   generateAccounts,
   upgradeToTokenX,
 } = require("./helpers/Accounts");
-const { mineBlocks } = require("./helpers/Utils");
+const { mineBlocks, getTokenxBalance } = require("./helpers/Utils");
+const { startFlow } = require("./helpers/Superfluid");
+const { BigNumber } = require("ethers");
 
 // TODO: time travelling
 // https://ethereum.stackexchange.com/questions/86633/time-dependent-tests-with-hardhat
@@ -20,8 +22,8 @@ const { mineBlocks } = require("./helpers/Utils");
 const provider = web3;
 
 let omnifient, alice, bob, mallory;
-let sf, superSigner, dai, daix, btc, btcx;
-let dcaPoolContract, uniswapContract;
+let sf, sfSigner, dai, daix, btc, btcx;
+let dcaPool, uniswapContract;
 
 const errHandler = (err) => {
   if (err) throw err;
@@ -75,8 +77,8 @@ before(async function () {
     protocolReleaseVersion: "test",
   });
 
-  // TODO: why?
-  superSigner = await sf.createSigner({
+  // signer/provider for superfluid operations
+  sfSigner = await sf.createSigner({
     signer: omnifient,
     provider: provider,
   });
@@ -94,7 +96,7 @@ before(async function () {
 
   // get the contract
   const DCAPoolFactory = await ethers.getContractFactory("DCAPool");
-  dcaPoolContract = await DCAPoolFactory.deploy(
+  dcaPool = await DCAPoolFactory.deploy(
     sf.settings.config.hostAddress,
     sf.settings.config.cfaV1Address,
     sf.settings.config.idaV1Address,
@@ -105,10 +107,10 @@ before(async function () {
     uniswapContract.address,
     3000
   );
-  await dcaPoolContract.deployed();
-  console.log("DCA deployed to:", dcaPoolContract.address);
+  await dcaPool.deployed();
+  console.log("DCA deployed to:", dcaPool.address);
 
-  await dcaPoolContract.setPoolConfig(24 * 60 * 60 * 1000, 0, 0, 0);
+  await dcaPool.setPoolConfig(24 * 60 * 60 * 1000, 0, 0, 0);
 });
 
 beforeEach(async function () {
@@ -130,16 +132,64 @@ beforeEach(async function () {
   await mineBlocks(1);
 });
 
-describe("CFA", () => {
-  it("something", async function () {
-    expect(1).to.equal(1);
+describe("DCA", () => {
+  it("index exists", async function () {
+    // MEH
+    const idx = await sf.idaV1.getIndex({
+      indexId: "123",
+      providerOrSigner: sfSigner,
+      publisher: dcaPool.address,
+      superToken: btcx.address,
+    });
+    console.log(idx);
   });
-});
+  it("single investor starts dca-ing correctly", async function () {
+    //   const aliceBal1 = await getTokenxBalance(sfSigner, daix, alice.address);
+    //   const dcaBal1 = await getTokenxBalance(sfSigner, daix, dcaPool.address);
+    //   expect(aliceBal1).to.be.gt(BigNumber.from(0));
+    //   expect(dcaBal1).to.equal(BigNumber.from(0));
+    //   const flowrate = 3860000000000; // $10/month
+    //   await startFlow(sf, alice, dcaPool, daix.address, flowrate.toString());
+    //   await mineBlocks(5);
+    //   const aliceBal2 = await getTokenxBalance(sfSigner, daix, alice.address);
+    //   const dcaBal2 = await getTokenxBalance(sfSigner, daix, dcaPool.address);
+    //   const result = ethers.utils.parseEther((flowrate * 5).toString());
+    //   expect(aliceBal2).to.be.lt(aliceBal1);
+    //   expect(dcaBal2).to.equal(result);
+  });
 
-describe("SWAP", () => {
-  // TODO:
-});
+  it("multiple investors can stream money to the contract", async function () {
+    const flowrate = 3860000000000; // $10/month
 
-describe("IDA", () => {
-  // TODO:
+    console.log("go alice");
+    await startFlow(sf, alice, dcaPool, daix.address, flowrate.toString());
+
+    console.log("go bob");
+    await startFlow(sf, bob, dcaPool, daix.address, flowrate.toString());
+
+    console.log("go mallory");
+    await startFlow(sf, mallory, dcaPool, daix.address, flowrate.toString());
+
+    await mineBlocks(1);
+
+    const dcaBal = await getTokenxBalance(sfSigner, daix, dcaPool.address);
+    console.log("dca bal", dcaBal);
+    expect(dcaBal).to.equal(
+      // 12315456465465
+      ethers.utils.parseEther("9999999")
+    );
+    // console.log(await provider.getBlock(await provider.getBlockNumber()));
+    // TODO: multiple investors subscribe correctly
+    // TODO: when a new investor streams money, the balance is reset
+  });
+
+  it("contract swaps tokens and distributes correctly", async function () {
+    //   // TODO: last buy timestamp changes
+    //   // TODO: investors receive the correct proportion
+  });
+
+  // TODO: investors must stream minimum amount required
+  // TODO: only swaps if balance is greater than minimum amount to spend
+  // TODO: only distributes if balance is greater than minimum amount to distribute
+  // TODO: investor unsubscribes correctly
 });

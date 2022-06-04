@@ -15,11 +15,10 @@ const errorHandler = (err) => {
 async function mintTokensTo(token, tokenx, signer, account) {
   console.log("minting token/x to", account.address);
 
-  const x = await token
+  await token
     .connect(signer)
     .mint(account.address, ethers.utils.parseEther("10000"));
   console.log("token minted");
-  x.wait();
 
   // const tokenBal = await token.balanceOf({
   //   account: account.address,

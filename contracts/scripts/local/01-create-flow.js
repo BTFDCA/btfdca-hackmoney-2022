@@ -2,6 +2,7 @@ const { Framework } = require("@superfluid-finance/sdk-core");
 const { ethers, web3 } = require("hardhat");
 
 async function createFlow(sf, daix, signer) {
+  // TODO: this is not up to date
   const userData = ethers.utils.defaultAbiCoder.encode(
     ["string", "uint128", "string"],
     ["fDAIx", "10000000000000000000", "BTC"]

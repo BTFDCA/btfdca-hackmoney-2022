@@ -19,7 +19,7 @@ contract DCAPool is SfDCAPool {
     struct DCAPoolConfig {
         uint256 buyCadence; // the regular cadence to buy
         uint256 lastBuyTimestamp; // timestamp for last buy and distribute
-        uint256 minInvestableAmount; // min amount an investor must stream
+        int96 minInvestableAmount; // min amount an investor must stream
         uint256 minAmountToSpend; // minimum balance the pool must have to swap
         uint256 minAmountToDistribute; // minimum balance the pool must have to distribute
     }
@@ -49,7 +49,6 @@ contract DCAPool is SfDCAPool {
         // register with superfluid host
         // this reflects the callbacks that are NOT implemented
         uint256 configWord = SuperAppDefinitions.APP_LEVEL_FINAL |
-            SuperAppDefinitions.BEFORE_AGREEMENT_CREATED_NOOP |
             SuperAppDefinitions.BEFORE_AGREEMENT_UPDATED_NOOP |
             SuperAppDefinitions.AFTER_AGREEMENT_UPDATED_NOOP |
             SuperAppDefinitions.BEFORE_AGREEMENT_TERMINATED_NOOP;
@@ -66,7 +65,7 @@ contract DCAPool is SfDCAPool {
     // TODO: onlyRole
     function setPoolConfig(
         uint256 poolBuyCadence,
-        uint256 minInvestableAmount,
+        int96 minInvestableAmount,
         uint256 minAmountToSpend,
         uint256 minAmountToDistribute
     ) external {
@@ -95,7 +94,7 @@ contract DCAPool is SfDCAPool {
     }
 
     // TODO: onlyRole
-    function setMinInvestableAmount(uint32 newMinInvestableAmount) external {
+    function setMinInvestableAmount(int96 newMinInvestableAmount) external {
         _poolConfig.minInvestableAmount = newMinInvestableAmount;
     }
 
@@ -155,6 +154,31 @@ contract DCAPool is SfDCAPool {
         section).
     */
 
+    function beforeAgreementCreated(
+        ISuperToken superToken,
+        address, /*agreementClass*/
+        bytes32, /*agreementId*/
+        bytes calldata, /*agreementData*/
+        bytes calldata /*ctx*/
+    )
+        external
+        view
+        virtual
+        override
+        returns (
+            bytes memory /*cbdata*/
+        )
+    {
+        // TODO: onlyHost?
+        // TODO: onlyExpected(token, agreementClass)
+        console.log("HELLO FROM BEFORE AGREEMENT CREATED");
+
+        // TODO: get rid of this if we can't validate the flowrate here...
+        require(superToken == _sourceToken, "BAC-TE");
+
+        console.log("BYE FROM BEFORE AGREEMENT CREATED");
+    }
+
     function afterAgreementCreated(
         ISuperToken, // _superToken,
         address, // _agreementClass,
@@ -166,28 +190,31 @@ contract DCAPool is SfDCAPool {
         // TODO: onlyExpected(token, agreementClass)
         console.log("HELLO FROM AFTER AGREEMENT CREATED!");
 
+        console.log("retrieving context");
         ISuperfluid.Context memory decodedContext = _sfHost.decodeCtx(ctx);
-        require(decodedContext.userData.length > 0, "AAC-UD");
 
-        // decode user data
-        (address sourceToken, address targetToken, uint256 amount) = abi.decode(
-            decodedContext.userData,
-            (address, address, uint256)
+        // check that the flowrate is above minimum
+        (, int96 flowrate, , ) = _cfa.getFlow(
+            _sourceToken,
+            decodedContext.msgSender,
+            address(this)
         );
-        // validate the user data
-        require(amount >= _poolConfig.minInvestableAmount, "AAC-IA");
-        require(sourceToken == address(_sourceToken), "AAC-IST");
-        require(targetToken == address(_targetToken), "AAC-ITT");
+        console.log("flowrate", uint256(int256(flowrate)));
+        require(flowrate >= _poolConfig.minInvestableAmount, "AAC-MIA");
 
         // calling buyAndDistribute will distribute any existing tokens, effectively "resetting" the investments
         // we need this to correctly keep track of the balances for new investors
         // NOTE: if dust balances exist (and don't get distributed) then new investors will get a share of the dust
+        console.log("buy and distribute to clear the balances");
         try this.buyAndDistribute() {} catch {}
 
         // register new investor
+        console.log("add new investor");
         // TODO: fix the shares (amount might have too many zeroes - uints is uint128)
-        uint128 shares = uint128(amount / 1000);
-        _idav1Lib.updateSubscriptionUnits(
+        // https://github.com/Ricochet-Exchange/ricochet-protocol/blob/main/contracts/REXMarket.sol#L479
+        uint128 shares = uint128(uint256(int256(flowrate)));
+        bytes memory newCtx = _idav1Lib.updateSubscriptionUnitsWithCtx(
+            ctx,
             _targetToken,
             _idaIndex,
             decodedContext.msgSender,
@@ -195,7 +222,7 @@ contract DCAPool is SfDCAPool {
         );
 
         console.log("BYE FROM AFTER AGREEMENT CREATED!");
-        return ctx;
+        return newCtx;
     }
 
     function afterAgreementTerminated(
@@ -237,7 +264,9 @@ contract DCAPool is SfDCAPool {
         ISuperfluid.Context memory decodedContext = _sfHost.decodeCtx(ctx);
 
         // unregister investor - remove from ida
-        _idav1Lib.updateSubscriptionUnits(
+        // TODO: deleteSubscriptionWithCtx
+        bytes memory newCtx = _idav1Lib.updateSubscriptionUnitsWithCtx(
+            ctx,
             _targetToken,
             _idaIndex,
             decodedContext.msgSender,
@@ -254,8 +283,9 @@ contract DCAPool is SfDCAPool {
             ? lastUpdatedTimestamp
             : _poolConfig.lastBuyTimestamp;
 
+        // TODO: hmmm.. is this correct?
         uint256 amount = uint256(uint96(flowrate)) * (block.timestamp - ts);
-        if (amount >= _poolConfig.minInvestableAmount) {
+        if (flowrate >= _poolConfig.minInvestableAmount) {
             bool transferred = _sourceToken.transferFrom(
                 address(this),
                 decodedContext.msgSender,
@@ -265,7 +295,7 @@ contract DCAPool is SfDCAPool {
         }
 
         console.log("BYE FROM AFTER AGREEMENT TERMINATED!");
-        return ctx;
+        return newCtx;
     }
 
     /**************************************************************************
@@ -293,6 +323,7 @@ contract DCAPool is SfDCAPool {
 
         // get the amount to spend (everything), and check that's above the spending threshold
         amountOut = _sourceToken.balanceOf(address(this)); // TODO: keep e.g. 1 gwei to keep the app solvent? ricochet doesn't do that
+        console.log("contract is going to swap out", amountOut);
         require(amountOut >= _poolConfig.minAmountToSpend, "BAD-MAS");
         // TODO: take btfdca's fee (e.g. 1 bps) out of the amount (and transfer it to a fee contract)
         // TODO: check for overflows and underflows...
@@ -319,7 +350,7 @@ contract DCAPool is SfDCAPool {
         if (amountPiled > amountIn) amountIn = amountPiled;
 
         // distribute the swapped tokens to the investors, if it's above the distribution threshold
-        console.log("give back ser!");
+        console.log("give back ser!", amountIn);
         if (amountIn >= _poolConfig.minAmountToDistribute) {
             // gotta convert into a supertoken
             // TODO: REX is doing: amountIn * (10 ** (18 - ERC20(inTokenAddr).decimals()));
