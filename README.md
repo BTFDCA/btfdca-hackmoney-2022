@@ -14,10 +14,12 @@ https://docs.google.com/document/d/14slkmrXMwsRnxpq0subWCeeJpQp3YcVie8luGrmM63Q/
 - [ ] support target tokens btc, eth
   - [ ] buy crypto indexes
     - [ ] indexcoop
+- [ ] support other target assets
+  - [ ] fractionalized nfts
 - [ ] buy modes
   - [ ] spend a fixed amount (e.g. $10/month)
   - [ ] buy target amount (e.g. 1 BTC / N time = x/month/day)
-- [ ] time oracles
+- [ ] keeper/sentinel
 - [ ] reinvest assets
 - [ ] push notifications
 - [ ] show contract balance (per dca pool)
@@ -28,9 +30,20 @@ https://docs.google.com/document/d/14slkmrXMwsRnxpq0subWCeeJpQp3YcVie8luGrmM63Q/
   - [ ] list transactions
 - [ ] show available balance to "claim"
 
-- polygon hackathon
+- encoode polygon hackathon
 - [ ] research how to use unstoppable domains
+  - [ ] link to dca dashboard
+  - [ ] distribute to domain
+  - [ ] login?
+  - [ ] take your streams?
+  - [ ] export data?
 - [ ] research how to use covalent
+  - [ ] wallet
+  - [ ] contract dashboard
+- [ ] 3min max video
+- [ ] presentation
+- [ ] website or online demo
+- [ ] technical paper
 
 - integrations
 - [ ] gearbox?
@@ -57,6 +70,8 @@ https://docs.google.com/document/d/14slkmrXMwsRnxpq0subWCeeJpQp3YcVie8luGrmM63Q/
 
 - app
 - [x] host on vercel/etc
+- [ ] restyle with mui `https://mui.com/`
+- [ ] use wagmi hooks `https://wagmi.sh/`
 
 - main
 - [x] clicking the LFG button creates the stream with selected values
@@ -81,18 +96,41 @@ https://docs.google.com/document/d/14slkmrXMwsRnxpq0subWCeeJpQp3YcVie8luGrmM63Q/
 - [x] deploy to testnet
 
 - [ ] how to compute and distribute assets correctly
-
   - [ ] updateSubscriptionUnits(newInvestor, pro-rata)
     - [ ] needs an update mechanism
   - [ ] updateSubscriptionUnits(newInvestor, full-amount)
     - [ ] buy+distribute before registering new investor
   - [ ] buy+distribute decides the investors and their amounts
     - [ ] requires trust
-
-- [ ] distribute the owner of the contracts
+- [ ] contracts should not be owned by a single wallet
   - [ ] `https://gnosis-safe.io/`
+- [ ] emit events
+  - [ ] on new investor (maybe not needed, since CFA might emit)
+  - [ ] on distribution
 
 ## Resources
+
+```links
+https://github.com/LooksRare/contracts-token-staking/blob/d754b6e0f41f70532fa5a4fc9196ce67575325b7/contracts/test/utils/MockUniswapV3Router.sol
+https://github.com/superfluid-finance/protocol-monorepo/blob/6e6d5ef213938f8b8b66b3ff787a059d0132ff4e/packages/ethereum-contracts/contracts/superfluid/SuperfluidToken.sol
+https://github.com/superfluid-finance/protocol-monorepo/blob/bd59c6c270e62d6b1a62761f6bad89de44aa2ce9/packages/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol
+https://github.com/superfluid-finance/protocol-monorepo/blob/dev/packages/ethereum-contracts/contracts/apps/IDAv1Library.sol
+
+https://github.com/Ricochet-Exchange/ricochet-protocol/blob/main/contracts/REXMarket.sol#L479
+https://github.com/Ricochet-Exchange/ricochet-protocol/blob/main/test/REXMarket.test.js
+https://github.com/Ricochet-Exchange/ricochet-protocol/blob/21bef8c63beb3f3cb5ac91b0247a946209159913/misc/helpers.js#L16
+https://github.com/Ricochet-Exchange/ricochet-protocol/blob/main/contracts/REXOneWayMarket.sol
+https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
+https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol
+https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol
+https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/utils/SafeERC20.sol
+https://github.com/Uniswap/v3-periphery/blob/main/contracts/libraries/TransferHelper.sol
+https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/AccessControl.sol
+https://github.com/superfluid-finance/protocol-monorepo/tree/dev/examples
+
+https://ethereum-waffle.readthedocs.io/en/latest/matchers.html
+https://docs.superfluid.finance/superfluid/developers/solidity-examples/solidity-libraries/cfav1-library
+```
 
 ```shell
 # SOLIDITY
@@ -145,4 +183,165 @@ https://mumbai.polygonscan.com/address/0x9c3C9283D3e44854697Cd22D3Faa240Cfb03288
 https://mumbai.polygonscan.com/address/0xDbF73fD909aD55f2aEE04f328b590945aFC7e5e6#code
 
 https://github.com/tmm/wagmi
+```
+
+```snippets
+// fund a contract with btc
+await fundWithERC20(btc, omnifient, dcaPoolContract);
+await mineNBlocks(1);
+console.log(
+  dcaPoolContract.address,
+  "btc bal:",
+  await btc.balanceOf(dcaPoolContract.address)
+);
+
+// --------------------------------------------------------------------------
+
+console.log(
+  omnifient.address,
+  "btc bal:",
+  await btc.balanceOf(omnifient.address)
+);
+
+// --------------------------------------------------------------------------
+
+btcx.transferFrom(
+  omnifient,
+  dcaPoolContract.address,
+  ethers.utils.parseEther("1000")
+);
+
+// --------------------------------------------------------------------------
+
+// btc
+//   .connect(omnifient)
+//   .transferFrom(
+//     omnifient,
+//     dcaPoolContract.address,
+//     ethers.utils.parseEther("1000")
+//   );
+
+// console.log(
+//   omnifient.address,
+//   "btcx bal:",
+//   await btcx.balanceOf({
+//     account: omnifient.address,
+//     providerOrSigner: omnifient,
+//   })
+// );
+
+// --------------------------------------------------------------------------
+
+// THIS WORKS
+// const prov = dcaPoolContract.provider;
+
+// // fund the contract with native tokens
+// fundWithNative(dcaPoolContract.address);
+// await mineNBlocks(1);
+// console.log(
+//   "contract.balance",
+//   await prov.getBalance(dcaPoolContract.address)
+// );
+
+// // fund the signer with native tokens
+// fundWithNative(dcaPoolContract.signer.address);
+// await mineNBlocks(1);
+// console.log(
+//   "contract.signer.balance",
+//   await prov.getBalance(dcaPoolContract.signer.address)
+// );
+
+// --------------------------------------------------------------------------
+
+// THIS WORKS
+// fund the signer with btc
+await fundWithERC20(btc, omnifient, dcaPoolContract.signer);
+await mineNBlocks(1);
+console.log(
+  dcaPoolContract.signer.address,
+  "btc bal:",
+  await btc.balanceOf(dcaPoolContract.signer.address)
+);
+
+// approve btc and upgrade to btcx for the signer
+await btc
+  .connect(dcaPoolContract.signer)
+  .approve(btcx.address, ethers.utils.parseEther("1000"));
+
+const signerUpgradeOperation = btcx.upgrade({
+  amount: ethers.utils.parseEther("1000"),
+});
+await signerUpgradeOperation.exec(dcaPoolContract.signer);
+
+await mineNBlocks(1);
+
+console.log(
+  dcaPoolContract.signer.address,
+  "btc bal:",
+  await btc.balanceOf(dcaPoolContract.signer.address)
+);
+
+console.log(
+  dcaPoolContract.signer.address,
+  "btcx bal:",
+  await btcx.balanceOf({
+    account: dcaPoolContract.signer.address,
+    providerOrSigner: dcaPoolContract.signer,
+  })
+);
+
+// --------------------------------------------------------------------------
+
+await mineNBlocks(1);
+console.log(
+  uniswapContract.address,
+  "btc bal:",
+  await btc.balanceOf(uniswapContract.address)
+);
+
+// --------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+// https://ethereum-waffle.readthedocs.io/en/latest/matchers.html
+expect(await token.balanceOf(wallet.address)).to.equal(993);
+expect(BigNumber.from(100)).to.be.within(BigNumber.from(99), BigNumber.from(101));
+expect(BigNumber.from(100)).to.be.closeTo(BigNumber.from(101), 10);
+
+// Testing if function was called on the provided contract:
+await token.balanceOf(wallet.address)
+expect('balanceOf').to.be.calledOnContract(token);
+
+// Called on contract with arguments
+await token.balanceOf(wallet.address)
+expect('balanceOf').to.be.calledOnContractWith(token, [wallet.address]);
+
+// Testing if transaction was reverted:
+await expect(token.transfer(walletTo.address, 1007)).to.be.reverted;
+
+// Revert with message
+await expect(token.transfer(walletTo.address, 1007)).to.be.revertedWith('Insufficient funds');
+
+// Change ether balance
+await expect(() => wallet.sendTransaction({to: walletTo.address, value: 200}))
+  .to.changeEtherBalance(walletTo, 200);
+
+await expect(await wallet.sendTransaction({to: walletTo.address, value: 200}))
+  .to.changeEtherBalance(walletTo, 200);
+
+  // Change ether balance (multiple accounts)
+  await expect(() => wallet.sendTransaction({to: walletTo.address, value: 200}))
+  .to.changeEtherBalances([wallet, walletTo], [-200, 200]);
+
+await expect(await wallet.sendTransaction({to: walletTo.address, value: 200}))
+  .to.changeEtherBalances([wallet, walletTo], [-200, 200]);
+
+// Mocking your smart contract dependencies.
+// https://ethereum-waffle.readthedocs.io/en/latest/mock-contract.html
+
 ```
