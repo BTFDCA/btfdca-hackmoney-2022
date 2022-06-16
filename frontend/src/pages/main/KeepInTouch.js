@@ -1,8 +1,8 @@
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
 
-import Button from "../../components/mui/components/Button";
-import Typography from "../../components/mui/components/Typography";
+import Button from "../../components/mui/Button";
+import Typography from "../../components/mui/Typography";
 
 export default function KeepInTouch() {
   return (

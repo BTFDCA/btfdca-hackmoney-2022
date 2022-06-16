@@ -2,7 +2,7 @@ import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import { styled } from "@mui/material/styles";
 import DcaConfig from "../../components/DcaConfig";
-import Typography from "../../components/mui/components/Typography";
+import Typography from "../../components/mui/Typography";
 
 const ProductHeroLayoutRoot = styled("section")(({ theme }) => ({
   color: theme.palette.common.white,

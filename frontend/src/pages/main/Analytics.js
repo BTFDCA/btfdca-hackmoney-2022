@@ -1,5 +1,3 @@
-function Analytics() {
+export default function Analytics() {
   return <></>;
 }
-
-export default Analytics;

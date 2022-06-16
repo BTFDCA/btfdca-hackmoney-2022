@@ -1,7 +1,7 @@
-import Button from "../../components/mui/components/Button";
 import Container from "@mui/material/Container";
 
-import Typography from "../../components/mui/components/Typography";
+import Button from "../../components/mui/Button";
+import Typography from "../../components/mui/Typography";
 
 export default function Contact() {
   return (

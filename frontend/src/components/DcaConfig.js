@@ -6,8 +6,8 @@ import { useNavigate } from "react-router-dom";
 import DcaSelect from "./DcaSelect";
 import DcaConfigAlerts from "./DcaConfigAlerts";
 
-import Button from "./mui/components/Button";
-import Typography from "./mui/components/Typography";
+import Button from "./mui/Button";
+import Typography from "./mui/Typography";
 
 import { getTargetTokenOptions } from "../config/options";
 import { ADDRESSES } from "../config/constants";

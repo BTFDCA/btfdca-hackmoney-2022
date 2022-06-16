@@ -1,9 +1,9 @@
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 
-import AppBar from "./mui/components/AppBar";
-import Toolbar from "./mui/components/Toolbar";
-import Typography from "./mui/components/Typography";
+import AppBar from "./mui/AppBar";
+import Toolbar from "./mui/Toolbar";
+import Typography from "./mui/Typography";
 
 import { useEffect, useState } from "react";
 import { ADDRESSES } from "../config/constants";

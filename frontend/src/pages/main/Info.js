@@ -1,8 +1,8 @@
-import { Paper } from "@mui/material";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 
-import Typography from "../../components/mui/components/Typography";
+import Paper from "../../components/mui/Paper";
+import Typography from "../../components/mui/Typography";
 
 const item = {
   display: "flex",

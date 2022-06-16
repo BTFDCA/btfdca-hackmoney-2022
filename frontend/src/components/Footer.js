@@ -2,7 +2,8 @@ import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import Container from "@mui/material/Container";
-import Typography from "./mui/components/Typography";
+
+import Typography from "./mui/Typography";
 
 import { ADDRESSES } from "../config/constants";
 
