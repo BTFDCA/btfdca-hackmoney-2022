@@ -1,6 +1,20 @@
+import Box from "@mui/material/Box";
+import Link from "@mui/material/Link";
+
+import AppBar from "./mui/components/AppBar";
+import Toolbar from "./mui/components/Toolbar";
+import Typography from "./mui/components/Typography";
+
 import { useEffect, useState } from "react";
 import { ADDRESSES } from "../config/constants";
 import { getErc20Balance } from "../helpers/balances";
+import { Avatar } from "@mui/material";
+
+const headerText = {
+  fontSize: 15,
+  color: "common.white",
+  ml: 3,
+};
 
 function Header({ chainId, account }) {
   const [fDaixBalance, setfDaixBalance] = useState("");
@@ -20,70 +34,111 @@ function Header({ chainId, account }) {
 
   return (
     <header>
-      <nav className="navbar navbar-expand-lg bg-light">
-        <div className="container-fluid">
-          <div className="navbar-brand">
-            <img
-              className="d-inline-block"
-              src="./logo192.png"
-              width="30"
-              height="30"
-              alt="logo"
-            />
-            &nbsp;#BTFDCA
-          </div>
+      <AppBar position="fixed">
+        <Toolbar sx={{ justifyContent: "space-between" }}>
+          <Box sx={{ flex: 1 }}>
+            {/* logo */}
+            <Link
+              color="inherit"
+              variant="h6"
+              underline="none"
+              href="/"
+              sx={headerText}
+            >
+              <Avatar
+                src="./logo192.png"
+                alt="logo"
+                variant="square"
+                sx={{
+                  display: "inline-block",
+                  verticalAlign: "middle",
+                  width: "3rem",
+                  height: "3rem",
+                }}
+              />
+            </Link>
 
-          <div className="collapse navbar-collapse">
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-              <li className="nav-item"></li>
-              <li className="nav-item">
-                <a className="nav-link active" aria-current="page" href="/">
-                  🏠&nbsp;Main
-                </a>
-              </li>
-              <li className="nav-item">
-                <a
-                  className="nav-link active"
-                  aria-current="page"
-                  href="/wallet"
+            {/* main */}
+            <Link
+              color="inherit"
+              variant="h6"
+              underline="none"
+              href="/"
+              sx={headerText}
+            >
+              🏠&nbsp;Main
+            </Link>
+
+            {/* analytics */}
+            <Link variant="h6" underline="none" href="/stats" sx={headerText}>
+              🧮&nbsp;Analytics
+            </Link>
+
+            {/* wallet */}
+            <Link variant="h6" underline="none" href="/wallet" sx={headerText}>
+              👛&nbsp;Wallet
+            </Link>
+          </Box>
+          <Typography
+            variant="h6"
+            gutterBottom
+            component="span"
+            sx={{ fontSize: 30, color: "#fefefe" }}
+          >
+            #BTFDCA
+          </Typography>
+
+          <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+            {account ? (
+              <>
+                {/* account */}
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  component="span"
+                  sx={headerText}
                 >
-                  👛&nbsp;Wallet
-                </a>
-              </li>
-            </ul>
-          </div>
+                  {"Connected as " +
+                    account.substring(0, 5) +
+                    "..." +
+                    account.substring(account.length - 5, account.length)}
+                </Typography>
 
-          <div className="d-flex">
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-              {account ? (
-                <>
-                  <li className="nav-item">
-                    <span className="nav-link active">
-                      {"Connected as " +
-                        account.substring(0, 5) +
-                        "..." +
-                        account.substring(account.length - 5, account.length)}
-                    </span>
-                  </li>
-                  <li className="nav-item">
-                    <span className="nav-link active">·</span>
-                  </li>
+                {/* separator */}
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  component="span"
+                  sx={headerText}
+                >
+                  ·
+                </Typography>
 
-                  <li className="nav-item">
-                    <span className="nav-link active">
-                      fDAIx Balance: {fDaixBalance}
-                    </span>
-                  </li>
-                </>
-              ) : (
-                <li className="nav-item account">
-                  <span className="nav-link active">Not connected</span>
-                </li>
-              )}
-            </ul>
-          </div>
-        </div>
-      </nav>
+                {/* balance */}
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  component="span"
+                  sx={headerText}
+                >
+                  fDAIx Balance: {fDaixBalance}
+                </Typography>
+              </>
+            ) : (
+              <Typography
+                variant="h6"
+                gutterBottom
+                component="span"
+                sx={headerText}
+              >
+                🔌&nbsp;Not connected
+                {/* TODO: click to connect */}
+              </Typography>
+            )}
+          </Box>
+        </Toolbar>
+      </AppBar>
+      <Toolbar />
     </header>
   );
 }

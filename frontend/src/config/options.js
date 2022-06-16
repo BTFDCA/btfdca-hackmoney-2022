@@ -4,11 +4,11 @@
 import { ADDRESSES } from "./constants";
 
 const getSourceTokenOptions = (chainId) => {
-  return [{ label: "FDAIx", value: ADDRESSES[chainId].ADDRESS_FDAIX }];
+  return [{ id: 0, label: "FDAIx", value: ADDRESSES[chainId].ADDRESS_FDAIX }];
 };
 
 const getTargetTokenOptions = (chainId) => {
-  return [{ label: "ETHGx", value: ADDRESSES[chainId].ADDRESS_ETHGX }];
+  return [{ id: 0, label: "ETHGx", value: ADDRESSES[chainId].ADDRESS_ETHGX }];
 };
 
 const OPTIONS_CADENCE = [{ label: "day", value: "1" }];

@@ -1,14 +1,19 @@
+import { ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
-import Wallet from "./pages/Wallet";
 import Main from "./pages/Main";
+import Wallet from "./pages/Wallet";
+import Success from "./pages/Success";
 
-import "./styles/index.css";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import Success from "./pages/Success";
+
+import theme from "./styles/theme";
+import "./styles/index.css";
 
 const container = document.getElementById("root");
 const root = createRoot(container);
@@ -66,9 +71,12 @@ function App() {
   }, []);
 
   return (
-    <div>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+
       <Header chainId={chainId} account={account} />
-      <div className="App">
+
+      <div>
         <BrowserRouter>
           <Routes>
             <Route
@@ -81,6 +89,7 @@ function App() {
                 />
               }
             />
+            {/* TODO: route for analytics */}
             <Route
               path="/wallet"
               element={
@@ -106,7 +115,7 @@ function App() {
       </div>
 
       <Footer chainId={chainId} />
-    </div>
+    </ThemeProvider>
   );
 }
 
