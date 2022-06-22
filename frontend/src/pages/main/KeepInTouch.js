@@ -6,7 +6,7 @@ import Typography from "../../components/mui/Typography";
 
 export default function KeepInTouch() {
   return (
-    <Container component="section" sx={{ mt: 10 }}>
+    <Container component="section" sx={{ my: 10 }}>
       <Box
         sx={{
           display: "flex",

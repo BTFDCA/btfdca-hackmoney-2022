@@ -10,7 +10,7 @@ const ProductHeroLayoutRoot = styled("section")(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   [theme.breakpoints.up("sm")]: {
-    height: "100vh",
+    minHeight: "100vh",
   },
 }));
 

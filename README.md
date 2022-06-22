@@ -22,6 +22,17 @@ https://docs.google.com/document/d/14slkmrXMwsRnxpq0subWCeeJpQp3YcVie8luGrmM63Q/
 - [ ] keeper/sentinel
 - [ ] reinvest assets
 - [ ] push notifications
+- [ ] analytics (per pool - i.e. token pair)
+  - [ ] total amount invested
+  - [ ] number of total investors
+  - [ ] current amount invested
+  - [ ] number of current investors
+  - [ ] average swap price
+  - [ ] total amount returned (distributed)
+  - [ ] last amount returned (distributed)
+  - [ ] list of current investors and invested amount
+  - [ ] list of all investors and invested amount
+  - [ ] timeline with swaps/prices/amounts
 - [ ] show contract balance (per dca pool)
 - [ ] show counter until next buy (per dca pool)
 - [ ] show amount bought and distributed
@@ -95,6 +106,7 @@ https://docs.google.com/document/d/14slkmrXMwsRnxpq0subWCeeJpQp3YcVie8luGrmM63Q/
 - [x] implement swap logic
 - [x] deploy to testnet
 
+- [ ] how to support multiple pairs without deploying 1 contract per pair?
 - [ ] how to compute and distribute assets correctly
   - [ ] updateSubscriptionUnits(newInvestor, pro-rata)
     - [ ] needs an update mechanism
@@ -301,13 +313,6 @@ console.log(
 
 // --------------------------------------------------------------------------
 
-
-
-
-
-
-
-
 // https://ethereum-waffle.readthedocs.io/en/latest/matchers.html
 expect(await token.balanceOf(wallet.address)).to.equal(993);
 expect(BigNumber.from(100)).to.be.within(BigNumber.from(99), BigNumber.from(101));
@@ -344,4 +349,33 @@ await expect(await wallet.sendTransaction({to: walletTo.address, value: 200}))
 // Mocking your smart contract dependencies.
 // https://ethereum-waffle.readthedocs.io/en/latest/mock-contract.html
 
+// --------------------------------------------------------------------------
+
+# @app.route("/transactions", methods=["GET"])
+# def get_token_transfers():
+#     # TODO: get chain id and contract address from args
+#     data = cov_class_a.get_erc20_token_transfers(
+#         CHAIN_ID,
+#         CONTRACT_ADDR,
+#         "0xdbf73fd909ad55f2aee04f328b590945afc7e5e6",
+#     )
+
+#     # TODO: handle if data["error"]
+
+#     transfers = []
+#     for item in data["data"]["items"]:
+#         # from_address
+#         # to_address
+#         # gas_spent
+#         # value
+#         # tx_hash
+#         # transfers - contract_name, delta, from_address, to_address, transfer_type
+
+#         # pagination?
+#         transfers.append()
+
+
+#     rsp = jsonify(transfers)
+#     rsp.headers.add("Access-Control-Allow-Origin", "*")
+#     return rsp
 ```

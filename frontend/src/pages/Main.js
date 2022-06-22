@@ -10,7 +10,7 @@ function Main({ chainId, account, connectWallet }) {
       <Hero chainId={chainId} account={account} connectWallet={connectWallet} />
       <Info />
       <KeepInTouch />
-      <Analytics />
+      <Analytics chainId={chainId} />
       <Contact />
     </div>
   );

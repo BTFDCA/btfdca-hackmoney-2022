@@ -9,7 +9,7 @@ import { ADDRESSES } from "../config/constants";
 
 const iconStyle = {
   width: 48,
-  height: 48,
+  minHeight: 48,
   display: "flex",
   justifyContent: "center",
   alignItems: "center",

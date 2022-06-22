@@ -10,12 +10,11 @@ const item = {
 };
 
 function Info() {
-  // TODO: rewrite
   return (
     <Box
       component="section"
       sx={{
-        height: "100vh",
+        minHeight: "100vh",
         bgcolor: "secondary.light",
         alignItems: "center",
         p: 5,

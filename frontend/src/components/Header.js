@@ -53,7 +53,7 @@ function Header({ chainId, account }) {
                   display: "inline-block",
                   verticalAlign: "middle",
                   width: "3rem",
-                  height: "3rem",
+                  minHeight: "3rem",
                 }}
               />
             </Link>
