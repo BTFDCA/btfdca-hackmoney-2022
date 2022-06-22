@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  btfdca_api:
+    container_name: btfdca_api
+    build: ./api
+    image: btfdca_api
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_DEBUG: 1
+      PYTHONUNBUFFERED: true
+      FLASK_APP: ./src/app.py
+      FLASK_RUN_HOST: 0.0.0.0
+      FLASK_RUN_PORT: 5000
+      COVALENT_API_KEY: ${COVALENT_API_KEY}
+    volumes: ["./api:/opt/btfdca_api"]
+
+  # btfdca_app:
+  #   container_name: btfdca_app
+  #   build: ./app
+  #   image: btfdca_app
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - btfdca_api
+  #   environment:
+  #     REACT_APP_ANALYTICS_API_HOST: ${REACT_APP_ANALYTICS_API_HOST}
+  #     REACT_APP_ANALYTICS_API_PORT: ${REACT_APP_ANALYTICS_API_PORT}
