@@ -14,6 +14,7 @@ import Footer from "./components/Footer";
 
 import theme from "./styles/theme";
 import "./styles/index.css";
+import Stats from "./pages/Stats";
 
 const container = document.getElementById("root");
 const root = createRoot(container);
@@ -89,7 +90,10 @@ function App() {
                 />
               }
             />
-            {/* TODO: route for analytics */}
+            <Route
+              path="/stats"
+              element={<Stats chainId={chainId} account={account} />}
+            />
             <Route
               path="/wallet"
               element={

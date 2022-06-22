@@ -1,8 +1,8 @@
-import Hero from "./main/Hero";
-import Contact from "./main/Contact";
-import Analytics from "./main/Analytics";
-import Info from "./main/Info";
-import KeepInTouch from "./main/KeepInTouch";
+import Hero from "../components/main/Hero";
+import Contact from "../components/main/Contact";
+import Analytics from "../components/main/Analytics";
+import Info from "../components/main/Info";
+import KeepInTouch from "../components/main/KeepInTouch";
 
 function Main({ chainId, account, connectWallet }) {
   return (
