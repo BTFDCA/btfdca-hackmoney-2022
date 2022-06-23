@@ -1,7 +1,18 @@
+import {
+  Container,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
 import { useEffect, useState } from "react";
 
 import { ADDRESSES } from "../config/constants";
 import { getErc20Balance } from "../helpers/balances";
+import Typography from "./mui/Typography";
 
 async function fetchBalances(chainId, account, onFetchComplete) {
   // TODO: this should be more dynamic, by creating the structure based on getSource/TargetTokens
@@ -53,7 +64,7 @@ async function fetchBalances(chainId, account, onFetchComplete) {
   onFetchComplete(balances);
 }
 
-function Balances({ chainId, account }) {
+function Balances({ chainId, account, sx }) {
   const [balances, setBalances] = useState();
 
   useEffect(() => {
@@ -67,40 +78,52 @@ function Balances({ chainId, account }) {
         const bal = bals[i];
 
         balanceRows.push(
-          <tr key={"balance-row-" + i}>
-            <td>{bal.unwrappedToken}</td>
-            <td>{bal.unwrappedTokenBalance}</td>
-            <td>{bal.wrappedToken}</td>
-            <td>{bal.wrappedTokenBalance}</td>
-          </tr>
+          <TableRow key={"balance-row-" + i}>
+            <TableCell>{bal.unwrappedToken}</TableCell>
+            <TableCell>
+              {parseFloat(bal.unwrappedTokenBalance).toFixed(2)}
+            </TableCell>
+            <TableCell>{bal.wrappedToken}</TableCell>
+            <TableCell>
+              {parseFloat(bal.wrappedTokenBalance).toFixed(2)}
+            </TableCell>
+          </TableRow>
         );
       }
 
       return balanceRows;
     } else {
       return (
-        <tr>
-          <td colSpan="4">Loading...</td>
-        </tr>
+        <TableRow>
+          <TableCell colSpan="4">Loading...</TableCell>
+        </TableRow>
       );
     }
   };
 
   return (
-    <div className="balances">
-      <h4 className="balancesTitle">Your Balances</h4>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Unwrapped</th>
-            <th>Balance</th>
-            <th>Wrapped</th>
-            <th>Balance</th>
-          </tr>
-        </thead>
-        <tbody>{_renderBalanceRows(balances)}</tbody>
-      </table>
-    </div>
+    <Container maxWidth="lg" sx={sx}>
+      <Typography variant="h6" sx={{ mb: 4 }}>
+        ⚖️ Your Balances
+      </Typography>
+
+      <TableContainer component={Paper}>
+        <Table aria-label="simple table">
+          <TableHead>
+            <TableRow>
+              <TableCell colSpan="2" align="left">
+                Unwrapped Token Balance
+              </TableCell>
+              <TableCell colSpan="2" align="left">
+                Wrapped Token Balance
+              </TableCell>
+            </TableRow>
+          </TableHead>
+
+          <TableBody>{_renderBalanceRows(balances)}</TableBody>
+        </Table>
+      </TableContainer>
+    </Container>
   );
 }
 

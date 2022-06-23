@@ -1,10 +1,16 @@
+import { Box, ButtonGroup } from "@mui/material";
 import { ethers } from "ethers";
 import { useState } from "react";
 import { ADDRESSES } from "../config/constants";
 
 import { getSignerAndFramework } from "../helpers/sf";
+import Button from "./mui/Button";
+import Typography from "./mui/Typography";
+import TextField from "./mui/TextField";
+import DcaSelect from "./DcaSelect";
 
 const getWrapTokensOptions = (chainId) => {
+  // TODO: get these values from the network
   return [
     {
       label: "FDAIx",
@@ -44,51 +50,56 @@ async function downgradeToken(token, amount) {
 
 function TokenDowngrader({ chainId }) {
   const [amount, setAmount] = useState(0);
-  // const [selectedOptionIdx] = useState(getWrapTokensOptions(chainId)[0].value);
+  const [selectedOption, setSelectedOption] = useState();
 
   return (
-    <div className="tokenDowngrader">
-      <h5>🔽 Downgrade SuperToken to ERC20</h5>
+    <Box>
+      <Typography variant="h5">🔽 Downgrade SuperToken to ERC20</Typography>
 
-      <div className="input-group mt-5 mb-4">
-        <button
-          className="btn btn-outline-secondary dropdown-toggle"
-          type="button"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-          // onClick={(e) => setSelectedOptionIdx(e.target.value)}
-        >
-          {getWrapTokensOptions(chainId)[0].label}
-        </button>
-        <ul className="dropdown-menu"></ul>
+      <Box sx={{ my: 4 }}>
+        <DcaSelect
+          options={getWrapTokensOptions(chainId)}
+          placeholder="Token to Downgrade"
+          setVal={(evt) => setSelectedOption(evt.target.value)}
+          sx={{ mr: 1, mt: 2, minWidth: 200, bgcolor: "white" }}
+        />
 
-        {/* TODO: negative values, etc */}
-        <input
-          className="form-control"
-          aria-label="Text input with dropdown button"
+        {/* TODO: validate negative values, etc */}
+        {/* TODO: max button with  balance */}
+        <TextField
+          label="Amount"
+          InputLabelProps={{ style: { color: "white" } }}
+          helperText="How much to downgrade?"
           type="number"
-          min="0"
-          step="10"
-          placeholder="How much to downgrade?"
+          variant="standard"
+          InputProps={{
+            inputProps: {
+              min: 0,
+              step: 10,
+              placeholder: "How much to downgrade?",
+            },
+          }}
+          FormHelperTextProps={{ style: { color: "white" } }}
           onChange={(e) => setAmount(e.target.value)}
         />
-        {/* TODO: max button with fdai balance */}
-      </div>
+      </Box>
 
       {/* TODO: disable if balance == 0 */}
-      <div className="hstack">
-        <button
-          type="button"
-          className="btn btn-outline-primary  ms-auto"
-          aria-current="page"
+      {/* TODO: on downgrade finished */}
+      <ButtonGroup variant="outlined" aria-label="outlined button group">
+        <Button
+          variant="outlined"
+          size="small"
+          component="button"
+          color="primary"
           onClick={async () =>
-            downgradeToken(getWrapTokensOptions(chainId)[0], amount)
+            downgradeToken(JSON.parse(selectedOption), amount)
           }
         >
           Downgrade
-        </button>
-      </div>
-    </div>
+        </Button>
+      </ButtonGroup>
+    </Box>
   );
 }
 

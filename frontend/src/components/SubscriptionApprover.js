@@ -1,3 +1,4 @@
+import Button from "./mui/Button";
 import {
   ADDRESSES,
   SF_DISTRIBUTION_SUBSCRIPTION_IDX,
@@ -26,17 +27,19 @@ async function approveSubscription(targetToken) {
 function SubscriptionApprover({ chainId }) {
   return (
     <div>
-      <button
-        type="button"
-        className="btn btn-outline-primary  ms-auto"
-        aria-current="page"
+      <Button
+        variant="contained"
+        size="large"
+        component="button"
+        color="secondary"
+        sx={{ mt: 2, mb: 2, minWidth: 200 }}
         onClick={async () =>
           // TODO: go to wallet
           approveSubscription(ADDRESSES[chainId].ADDRESS_ETHGX)
         }
       >
         🤑 I want to get paid! 💰
-      </button>
+      </Button>
     </div>
   );
 }

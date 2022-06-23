@@ -1,3 +1,4 @@
+import { Box, ButtonGroup } from "@mui/material";
 import { ethers } from "ethers";
 import { useState } from "react";
 
@@ -5,8 +6,13 @@ import { erc20abi } from "../abis/erc20";
 import { supertokenAbi } from "../abis/supertoken";
 import { ADDRESSES } from "../config/constants";
 import { getSignerAndFramework } from "../helpers/sf";
+import DcaSelect from "./DcaSelect";
+import Button from "./mui/Button";
+import TextField from "./mui/TextField";
+import Typography from "./mui/Typography";
 
 const getWrapTokensOptions = (chainId) => {
+  // TODO: get these values from the network
   return [
     {
       label: "FDAI",
@@ -84,69 +90,66 @@ async function upgradeToken(token, amount) {
 
 function TokenUpgrader({ chainId }) {
   const [amount, setAmount] = useState(0);
-  const [selectedOptionIdx] = useState(getWrapTokensOptions(chainId)[0].value);
+  const [selectedOption, setSelectedOption] = useState();
 
   return (
-    <div className="tokenUpgrader">
-      <h5>🔼 Upgrade ERC20 to SuperToken</h5>
-      <div className="input-group mt-5 mb-4">
-        <button
-          className="btn btn-outline-secondary dropdown-toggle"
-          type="button"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-          // onClick={(e) => setSelectedOptionIdx(e.target.value)}
-        >
-          {getWrapTokensOptions(chainId)[0].label}
-        </button>
-        <ul className="dropdown-menu"></ul>
+    <Box>
+      <Typography variant="h5">🔼 Upgrade ERC20 to SuperToken</Typography>
+      <Box sx={{ my: 4 }}>
+        <DcaSelect
+          options={getWrapTokensOptions(chainId)}
+          placeholder="Token to Upgrade"
+          setVal={(evt) => setSelectedOption(evt.target.value)}
+          sx={{ mr: 1, mt: 2, minWidth: 200, bgcolor: "white" }}
+        />
 
-        {/* TODO: negative values, etc */}
-        <input
-          className="form-control"
-          aria-label="Text input with dropdown button"
+        {/* TODO: validate negative values, etc */}
+        {/* TODO: max button with fdai balance */}
+        <TextField
+          label="Amount"
+          InputLabelProps={{ style: { color: "white" } }}
+          helperText="How much to upgrade?"
           type="number"
-          min="0"
-          step="10"
-          placeholder="How much to upgrade?"
+          variant="standard"
+          InputProps={{
+            inputProps: {
+              min: 0,
+              step: 10,
+              placeholder: "How much to upgrade?",
+            },
+          }}
+          FormHelperTextProps={{ style: { color: "white" } }}
           onChange={(e) => setAmount(e.target.value)}
         />
-        {/* TODO: max button with fdai balance */}
-      </div>
+      </Box>
 
       {/* TODO: if not approved, etc */}
       {/* TODO: disable if balance == 0 */}
-      <div className="hstack gap-3">
-        <button
-          type="button"
-          className="btn btn-outline-primary  ms-auto"
-          aria-current="page"
+      {/* TODO: on approve finished, on upgrade finished */}
+      <ButtonGroup variant="outlined" aria-label="outlined button group">
+        <Button
+          variant="outlined"
+          size="small"
+          component="button"
+          color="primary"
           onClick={async () =>
-            approveUpgrade(
-              getWrapTokensOptions(chainId)[selectedOptionIdx],
-              amount
-            )
+            approveUpgrade(JSON.parse(selectedOption), amount)
           }
         >
           Approve
-        </button>
+        </Button>
 
-        <div className="vr"></div>
-
-        <button
-          type="button"
-          className="btn btn-outline-primary"
-          onClick={async () =>
-            upgradeToken(
-              getWrapTokensOptions(chainId)[selectedOptionIdx],
-              amount
-            )
-          }
+        <Button
+          variant="outlined"
+          size="small"
+          component="button"
+          color="primary"
+          onClick={async () => upgradeToken(JSON.parse(selectedOption), amount)}
         >
           Upgrade
-        </button>
-      </div>
-    </div>
+        </Button>
+      </ButtonGroup>
+    </Box>
   );
 }
 

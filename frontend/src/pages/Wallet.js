@@ -1,37 +1,59 @@
+import Box from "@mui/material/Box";
 import Balances from "../components/Balances";
 import TokenDowngrader from "../components/TokenDowngrader";
 import TokenUpgrader from "../components/TokenUpgrader";
 import SubscriptionApprover from "../components/SubscriptionApprover";
-
-import "../styles/Wallet.css";
+import { Container, Divider, Grid } from "@mui/material";
+import Typography from "../components/mui/Typography";
 
 function Wallet({ chainId, account, connectWallet }) {
   return (
-    <div className="wallet">
-      <Balances chainId={chainId} account={account} />
-
+    <Box>
       {/* TODO: only show if not approved */}
-      <div className="approval">
-        <p>
-          In order to get your moneyz, you have to approve the distribution 👇🏻.
-        </p>
+      <Container maxWidth="lg" sx={{ mt: 8 }}>
+        <Typography variant="h6">
+          ☑️ In order to get your moneyz, you have to approve the distribution
+          👇🏻.
+        </Typography>
+        {/* TODO: explain why */}
         <SubscriptionApprover chainId={chainId} />
-      </div>
 
-      <hr />
+        <Divider sx={{ my: 8 }} />
+      </Container>
 
-      <div className="supertokenOperations hstack gap-3">
-        <TokenUpgrader chainId={chainId} />
-        <div className="vr"></div>
-        <TokenDowngrader chainId={chainId} />
-      </div>
-      <hr />
+      <Balances chainId={chainId} account={account} sx={{ my: 8 }} />
+
+      <Container>
+        <Divider />
+      </Container>
+
+      <Container maxWidth="lg" sx={{ my: 8 }}>
+        <Typography variant="h6" sx={{ mb: 4 }}>
+          🌯 Wrap / Unwrap your tokens
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <TokenUpgrader chainId={chainId} />
+          </Grid>
+
+          <Grid item xs={6}>
+            <TokenDowngrader chainId={chainId} />
+          </Grid>
+        </Grid>
+      </Container>
+
+      <Container>
+        <Divider />
+      </Container>
+
       {/* link to superfluid's dashboard and console */}
-      <div className="superfluid vstack gap-3">
+      <Container maxWidth="lg" sx={{ my: 8 }}>
         {/* TODO: get network name from somewhere */}
-        <h4>🖥️ Do more things in Superfluid</h4>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          🖥️ Do more things in Superfluid
+        </Typography>
 
-        <div className="sfDash">
+        <div>
           <a
             href="https://app.superfluid.finance/dashboard"
             target="_blank"
@@ -45,27 +67,8 @@ function Wallet({ chainId, account, connectWallet }) {
             tokens, transfer and receive tokens, and much more.
           </p>
         </div>
-
-        <div className="sfConsole">
-          <a
-            href={
-              "https://console.superfluid.finance/" +
-              "mumbai" +
-              "/accounts/" +
-              account
-            }
-            target="_blank"
-            rel="noreferrer"
-          >
-            Go to your Superfluid console
-          </a>
-          <p>
-            Kinda like etherscan for Superfluid - get the full data on what's
-            happening under the hood.
-          </p>
-        </div>
-      </div>
-    </div>
+      </Container>
+    </Box>
   );
 }
 
