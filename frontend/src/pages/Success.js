@@ -1,11 +1,13 @@
+import { Box, Container, Divider } from "@mui/material";
 import { useEffect, useState } from "react";
+
+import Typography from "../components/mui/Typography";
+
 import {
   ADDRESSES,
   SF_DISTRIBUTION_SUBSCRIPTION_IDX,
 } from "../config/constants";
 import { getSignerAndFramework } from "../helpers/sf";
-
-import "../styles/Success.css";
 
 async function getClaimDetails(account, targetToken) {
   console.log(
@@ -48,40 +50,61 @@ function Success({ chainId, account, connectWallet }) {
   }, [account, chainId]);
 
   return (
-    <div className="success">
-      <div className="distributionInfo">
+    <Box
+      component="section"
+      sx={{
+        minHeight: "100vh",
+        alignItems: "center",
+        py: 8,
+      }}
+    >
+      <Container>
         {claimStatus == null ? (
           <>...</>
         ) : claimStatus === true ? (
           <>
-            <h4>Congrats fren 🫂, you've BTFDCA! 🎆🥳</h4>
-            <p>
+            <Typography variant="h6">
+              Congrats fren 🫂, you've BTFDCA! 🎆🥳
+            </Typography>
+
+            <Typography sx={{ mt: 2 }}>
               Every <code>gm!</code> you will receive your cryptoassets.
-            </p>
-            <p>That's all!</p>
+            </Typography>
+
+            <Typography sx={{ mt: 4 }}>That's all! </Typography>
           </>
         ) : (
           <>
-            <h4>Are you sure you're in the right place?</h4>
+            <Typography variant="h6">
+              Are you sure you're in the right place?
+            </Typography>
+
             <p>We can't seem to find any stream created.</p>
+
             <p>
               <a href="/">Are you sure you've BTFDCA?</a>
             </p>
-            <p className="mt-5">
+
+            <p>
               If you think something's wrong here, please reach out to us (and
               check the Superfluid dashboard 👇🏻 for more details).
             </p>
           </>
         )}
-      </div>
+      </Container>
 
-      <hr />
+      <Container sx={{ my: 8 }}>
+        <Divider />
+      </Container>
+
       {/* link to superfluid's dashboard and console */}
-      <div className="superfluid vstack gap-3">
+      <Container>
         {/* TODO: get network name from somewhere */}
-        <h4>🖥️ Wanna verify that things are working? Check Superfluid</h4>
+        <Typography variant="h6">
+          🖥️ Wanna verify that things are working? Check Superfluid
+        </Typography>
 
-        <div className="sfDash">
+        <Box sx={{ mt: 2 }}>
           <a
             href="https://app.superfluid.finance/dashboard"
             target="_blank"
@@ -94,9 +117,9 @@ function Success({ chainId, account, connectWallet }) {
             distributions, cancel the streams, check your activity, wrap/unwrap
             tokens, transfer and receive tokens, and much more.
           </p>
-        </div>
+        </Box>
 
-        <div className="sfConsole">
+        <Box sx={{ mt: 4 }}>
           <a
             href={
               "https://console.superfluid.finance/" +
@@ -113,9 +136,9 @@ function Success({ chainId, account, connectWallet }) {
             Kinda like etherscan for Superfluid - get the full data on what's
             happening under the hood.
           </p>
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Container>
+    </Box>
   );
 }
 
