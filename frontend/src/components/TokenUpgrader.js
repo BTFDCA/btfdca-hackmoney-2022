@@ -4,29 +4,12 @@ import { useState } from "react";
 
 import { erc20abi } from "../abis/erc20";
 import { supertokenAbi } from "../abis/supertoken";
-import { ADDRESSES } from "../config/constants";
+import { getUpgradableTokens } from "../config/options";
 import { getSignerAndFramework } from "../helpers/sf";
 import DcaSelect from "./DcaSelect";
 import Button from "./mui/Button";
 import TextField from "./mui/TextField";
 import Typography from "./mui/Typography";
-
-const getWrapTokensOptions = (chainId) => {
-  // TODO: get these values from the network
-  return [
-    {
-      label: "FDAI",
-      value: 0,
-      address: ADDRESSES[chainId].ADDRESS_FDAI,
-      upgradeTo: ADDRESSES[chainId].ADDRESS_FDAIX,
-    },
-    // {
-    //   label: "ETHG",
-    //   value: 2,
-    //   address: ADDRESSES[chainId].ADDRESS_ETHG,
-    // },
-  ];
-};
 
 async function approveUpgrade(token, amount) {
   console.log("approving upgrade", amount, "of", token);
@@ -97,7 +80,7 @@ function TokenUpgrader({ chainId }) {
       <Typography variant="h5">🔼 Upgrade ERC20 to SuperToken</Typography>
       <Box sx={{ my: 4 }}>
         <DcaSelect
-          options={getWrapTokensOptions(chainId)}
+          options={getUpgradableTokens(chainId)}
           placeholder="Token to Upgrade"
           setVal={(evt) => setSelectedOption(evt.target.value)}
           sx={{ mr: 1, mt: 2, minWidth: 200, bgcolor: "white" }}

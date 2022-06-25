@@ -6,7 +6,11 @@ import { useEffect, useState } from "react";
 import { getContractHistoricalBalances } from "../helpers/covalent";
 import Typography from "./mui/Typography";
 
-export default function ContractHistoricalBalances({ chainId }) {
+export default function ContractHistoricalBalances({
+  chainId,
+  pairName,
+  contractAddr,
+}) {
   const [chartData, setChartData] = useState();
 
   const accessors = {
@@ -24,39 +28,45 @@ export default function ContractHistoricalBalances({ chainId }) {
   };
 
   useEffect(() => {
-    getContractHistoricalBalances(chainId, setChartData);
-  }, [chainId, setChartData]);
+    getContractHistoricalBalances(chainId, contractAddr, setChartData);
+  }, [chainId, contractAddr, setChartData]);
 
   return (
     <Box>
-      {chartData ? (
-        chartData.map((tokenData) => (
-          <Box sx={{ mb: 4 }}>
-            <XYChart
-              height={300}
-              // width={750}
-              xScale={{ type: "band", paddingInner: 0.6, paddingOuter: 0.1 }}
-              yScale={{ type: "linear", nice: true }}
-            >
-              <Grid columns={false} numTicks={4} />
-              <BarSeries
-                dataKey="Line 1"
-                data={tokenData["historical"]}
-                {...accessors}
-              />
-              <Axis orientation="bottom" hideTicks />
-              <Axis
-                orientation="right"
-                hideAxisLine
-                numTicks={4}
-                // tickFormat={(value) => percent.format(value)}
-              />
-            </XYChart>
-            <Typography align="center">
-              {tokenData["name"]} ({tokenData["ticker"]})
-            </Typography>
-          </Box>
-        ))
+      {chartData && chartData.length > 0 ? (
+        <>
+          <Typography variant="h6" align="center">
+            Timeline of Contract Balances ({pairName})
+          </Typography>
+
+          {chartData.map((tokenData) => (
+            <Box sx={{ mb: 4 }} key={tokenData["address"]}>
+              <XYChart
+                height={300}
+                // width={750}
+                xScale={{ type: "band", paddingInner: 0.6, paddingOuter: 0.1 }}
+                yScale={{ type: "linear", nice: true }}
+              >
+                <Grid columns={false} numTicks={4} />
+                <BarSeries
+                  dataKey="Line 1"
+                  data={tokenData["historical"]}
+                  {...accessors}
+                />
+                <Axis orientation="bottom" hideTicks />
+                <Axis
+                  orientation="right"
+                  hideAxisLine
+                  numTicks={4}
+                  // tickFormat={(value) => percent.format(value)}
+                />
+              </XYChart>
+              <Typography align="center">
+                {tokenData["name"]} ({tokenData["ticker"]})
+              </Typography>
+            </Box>
+          ))}
+        </>
       ) : (
         <></>
       )}

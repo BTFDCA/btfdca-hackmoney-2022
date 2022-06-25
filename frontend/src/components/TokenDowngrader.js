@@ -1,29 +1,13 @@
 import { Box, ButtonGroup } from "@mui/material";
 import { ethers } from "ethers";
 import { useState } from "react";
-import { ADDRESSES } from "../config/constants";
 
 import { getSignerAndFramework } from "../helpers/sf";
 import Button from "./mui/Button";
 import Typography from "./mui/Typography";
 import TextField from "./mui/TextField";
 import DcaSelect from "./DcaSelect";
-
-const getWrapTokensOptions = (chainId) => {
-  // TODO: get these values from the network
-  return [
-    {
-      label: "FDAIx",
-      value: 1,
-      downgradeFrom: ADDRESSES[chainId].ADDRESS_FDAIX,
-    },
-    // {
-    //   label: "ETHGx",
-    //   value: 3,
-    //   address: ADDRESSES[chainId].ADDRESS_ETHGX,
-    // },
-  ];
-};
+import { getDowgradableTokens } from "../config/options";
 
 async function downgradeToken(token, amount) {
   console.log("downgrade", amount, "of", token);
@@ -58,7 +42,7 @@ function TokenDowngrader({ chainId }) {
 
       <Box sx={{ my: 4 }}>
         <DcaSelect
-          options={getWrapTokensOptions(chainId)}
+          options={getDowgradableTokens(chainId)}
           placeholder="Token to Downgrade"
           setVal={(evt) => setSelectedOption(evt.target.value)}
           sx={{ mr: 1, mt: 2, minWidth: 200, bgcolor: "white" }}

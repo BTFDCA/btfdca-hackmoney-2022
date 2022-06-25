@@ -5,6 +5,9 @@ import {
 } from "../config/constants";
 import { getSignerAndFramework } from "../helpers/sf";
 
+// TODO: revamp this component
+// list all existent distributions, and show an approve status and approve button
+
 async function approveSubscription(targetToken) {
   console.log("approving subscription to", targetToken);
   const [chainId, signer, sf] = await getSignerAndFramework();
@@ -13,7 +16,7 @@ async function approveSubscription(targetToken) {
     const subscriptionApprovalOp = await sf.idaV1.approveSubscription({
       indexId: SF_DISTRIBUTION_SUBSCRIPTION_IDX,
       superToken: targetToken,
-      publisher: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP,
+      publisher: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP, // TODO: this needs to be parametrized
     });
     console.log("approval operation", subscriptionApprovalOp);
 

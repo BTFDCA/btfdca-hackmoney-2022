@@ -5,8 +5,6 @@ import Container from "@mui/material/Container";
 
 import Typography from "./mui/Typography";
 
-import { ADDRESSES } from "../config/constants";
-
 const iconStyle = {
   width: 48,
   minHeight: 48,
@@ -85,29 +83,6 @@ function Footer({ chainId }) {
               <Box component="li" sx={{ py: 0.5 }}>
                 {/* TODO: implement privacy */}
                 <Link href="/privacy">Privacy</Link>
-              </Box>
-            </Box>
-          </Grid>
-
-          <Grid item xs={6} sm={4} md={2}>
-            <Typography variant="h6" marked="left" gutterBottom>
-              Don't Trust
-            </Typography>
-            <Box component="ul" sx={{ m: 0, listStyle: "none", p: 0 }}>
-              <Box component="li" sx={{ py: 0.5 }}>
-                {/* TODO: get network name from somewhere */}
-                <Link
-                  href={
-                    "https://console.superfluid.finance/" +
-                    "mumbai" +
-                    "/accounts/" +
-                    ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP
-                  }
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Verify
-                </Link>
               </Box>
             </Box>
           </Grid>

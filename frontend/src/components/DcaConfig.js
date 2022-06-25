@@ -9,44 +9,46 @@ import DcaConfigAlerts from "./DcaConfigAlerts";
 import Button from "./mui/Button";
 import Typography from "./mui/Typography";
 
-import { getTargetTokenOptions } from "../config/options";
+import { getDcaPoolContract, getTargetTokenOptions } from "../config/options";
 import { ADDRESSES } from "../config/constants";
 import { getSignerAndFramework } from "../helpers/sf";
 import { getErc20Balance } from "../helpers/balances";
 import DcaSourceToken from "./DcaSourceToken";
 
 // TODO: move this to contract helpers
-async function createDCAFlow(sender, amount, sourceToken, targetToken) {
+async function createDCAFlow(amount, sourceToken, targetToken) {
   const cadenceInDays = 1;
 
-  console.log("Creating the DCA flow");
+  console.log("[dcaconfig] Creating the DCA flow");
   const [chainId, signer, sf] = await getSignerAndFramework();
 
   // the amount of source token per second to be streamed from the user to the contract
   const monthlyBuyAmount = amount * (30 / cadenceInDays);
   const flowRateInEth = monthlyBuyAmount / 3600 / 24 / 30;
   const flowRateInWei = ethers.utils.parseEther(flowRateInEth.toFixed(18));
-  console.log("flow rate:", flowRateInWei.toString());
+  console.log("[dcaconfig] flow rate:", flowRateInWei.toString());
 
   const amountInWei = ethers.utils.parseEther(amount.toString());
-  console.log("amount per day in wei", amountInWei.toString());
+  console.log("[dcaconfig] amount per day in wei", amountInWei.toString());
 
   // start streaming the tokens from the user to the dca superapp contract
   try {
     const createFlowOperation = sf.cfaV1.createFlow({
-      // TODO: source/target token pair is used to determine the receiver
-      receiver: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP,
+      receiver: getDcaPoolContract(chainId, sourceToken, targetToken),
       flowRate: flowRateInWei.toString(),
       superToken: sourceToken,
     });
-    console.log("created the create flow operation", createFlowOperation);
+    console.log(
+      "[dcaconfig] created the create flow operation",
+      createFlowOperation
+    );
 
     const result = await createFlowOperation.exec(signer);
-    console.log("stream created!", result);
+    console.log("[dcaconfig] stream created!", result);
 
     return result;
   } catch (error) {
-    console.error(error);
+    console.error("[dcaconfig] error", error);
   }
 }
 
@@ -74,7 +76,7 @@ function DcaConfig({ chainId, account, connectWallet }) {
   const [dcaError, setDcaError] = useState();
 
   const [requiredAmount, setRequiredAmount] = useState(0);
-  const [fDaixBalance, setfDaixBalance] = useState(0); // TODO: this must be changed to support different balances
+  const [fDaixBalance, setfDaixBalance] = useState(0); // TODO: this must be changed to support multiple source tokens
 
   // btn event handler
   const setupDCAFlow = async () => {
@@ -87,7 +89,7 @@ function DcaConfig({ chainId, account, connectWallet }) {
     );
 
     // create the superfluid stream, etc
-    createDCAFlow(account, buyAmount, sToken.value, tToken.value).then((r) => {
+    createDCAFlow(buyAmount, sToken.value, tToken.value).then((r) => {
       console.log(r);
       if (r) {
         console.log("success!");
@@ -121,7 +123,7 @@ function DcaConfig({ chainId, account, connectWallet }) {
         sx={{ background: "#21c21c", p: 2.5, borderRadius: 1, mt: 2, mb: 2 }}
       >
         <Typography color="#e8f8e8" variant="h2">
-          Periodically buy
+          EVERYDAY BUY
         </Typography>
 
         <DcaSourceToken
@@ -147,6 +149,8 @@ function DcaConfig({ chainId, account, connectWallet }) {
           sx={{ m: 1, minWidth: 200, bgcolor: "white" }}
         />
       </Box>
+
+      {/* TODO: show info about how much this is per week/month */}
 
       {/* alerts and errors */}
       {account && srcToken && fDaixBalance && buyAmount ? (

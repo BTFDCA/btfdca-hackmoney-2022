@@ -3,51 +3,51 @@ import { useEffect, useState } from "react";
 
 import Typography from "../components/mui/Typography";
 
-import {
-  ADDRESSES,
-  SF_DISTRIBUTION_SUBSCRIPTION_IDX,
-} from "../config/constants";
-import { getSignerAndFramework } from "../helpers/sf";
+// import {
+//   ADDRESSES,
+//   SF_DISTRIBUTION_SUBSCRIPTION_IDX,
+// } from "../config/constants";
+// import { getSignerAndFramework } from "../helpers/sf";
 
-async function getClaimDetails(account, targetToken) {
-  console.log(
-    "retrieving details of the IDA subscription",
-    account,
-    targetToken
-  );
-  const [chainId, signer, sf] = await getSignerAndFramework();
+// async function getClaimDetails(account, targetToken) {
+//   console.log(
+//     "[success] retrieving details of the IDA subscription",
+//     account,
+//     targetToken
+//   );
+//   const [chainId, signer, sf] = await getSignerAndFramework();
 
-  try {
-    console.log("getting the subscription", ADDRESSES[chainId]);
-    const subscription = await sf.idaV1.getSubscription({
-      publisher: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP,
-      indexId: SF_DISTRIBUTION_SUBSCRIPTION_IDX,
-      superToken: targetToken,
-      subscriber: account,
-      providerOrSigner: signer,
-    });
+//   try {
+//     console.log("[success] getting the subscription", ADDRESSES[chainId]);
+//     const subscription = await sf.idaV1.getSubscription({
+//       publisher: ADDRESSES[chainId].ADDRESS_DCA_SUPERAPP, // TODO: parametrize
+//       indexId: SF_DISTRIBUTION_SUBSCRIPTION_IDX,
+//       superToken: targetToken,
+//       subscriber: account,
+//       providerOrSigner: signer,
+//     });
 
-    console.log("fetched the subscription!", subscription);
-    return subscription;
-  } catch (error) {
-    console.error(error);
-  }
-}
+//     console.log("[success] fetched the subscription!", subscription);
+//     return subscription;
+//   } catch (error) {
+//     console.error(error);
+//   }
+// }
 
 function Success({ chainId, account, connectWallet }) {
-  const [claimStatus, setClaimStatus] = useState(false);
+  const [claimStatus, setClaimStatus] = useState(true);
 
-  useEffect(() => {
-    console.log("[success] account", account);
-    if (account) {
-      getClaimDetails(account, ADDRESSES[chainId].ADDRESS_ETHGX).then(
-        (subscription) => {
-          console.log("[success] subscription in use effect", subscription);
-          setClaimStatus(true);
-        }
-      );
-    }
-  }, [account, chainId]);
+  // useEffect(() => {
+  //   console.log("[success] account", account);
+  //   if (account) {
+  //     getClaimDetails(account, ADDRESSES[chainId].ADDRESS_ETHGX).then(
+  //       (subscription) => {
+  //         console.log("[success] subscription in use effect", subscription);
+  //         setClaimStatus(true);
+  //       }
+  //     );
+  //   }
+  // }, [account, chainId]);
 
   return (
     <Box
