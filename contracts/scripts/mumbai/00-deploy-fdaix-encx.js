@@ -8,13 +8,14 @@ async function main() {
   const signer = await hre.ethers.provider.getSigner();
   console.log("deploying with", await signer.getAddress());
 
-  const dcaFactory = await hre.ethers.getContractFactory("DCA");
+  const dcaFactory = await hre.ethers.getContractFactory("DCAPool");
   const dcaContract = await dcaFactory.deploy(
     process.env.MUMBAI_SF_HOST, // host
     process.env.MUMBAI_SF_CFA, // cfa
     process.env.MUMBAI_SF_IDA, // ida
+    1, // ida index
     process.env.MUMBAI_FDAIX, // source token
-    process.env.MUMBAI_ETHGx, // target token
+    process.env.MUMBAI_ENCX, // target token
     "", // registration key
     process.env.MUMBAI_UNISWAP_ROUTER, // uniswap router
     process.env.MUMBAI_UNISWAP_POOL_FEE // uniswap pool fee

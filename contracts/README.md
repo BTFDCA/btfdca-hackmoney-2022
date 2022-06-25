@@ -3,7 +3,7 @@
 ## testing on local node
 
 ```shell
-npx hardhat console --network hardhat
+yarn chain
 
 npx hardhat run --network localhost scripts/local/00-deploy.js
 npx hardhat run --network localhost scripts/local/01-create-flow.js
@@ -13,7 +13,9 @@ npx hardhat run --network localhost scripts/local/02-buy-and-distribute.js
 ## testing on polygon mumbai
 
 ```shell
-npx hardhat run --network mumbai scripts/mumbai/00-deploy.js
+npx hardhat run --network mumbai scripts/mumbai/00-deploy-fdaix-ethgx.js
+npx hardhat run --network mumbai scripts/mumbai/00-deploy-fdaix-encx.js
+npx hardhat run --network mumbai scripts/mumbai/00-deploy-fdaix-btfdcax.js
 npx hardhat run --network mumbai scripts/mumbai/01-swap-tokens.js
 npx hardhat run --network mumbai scripts/mumbai/03-buy-and-distribute.js
 ```
@@ -31,6 +33,7 @@ npx hardhat run --network localhost scripts/mumbai/03-buy-and-distribute.js
 ## common commands
 
 ```shell
+npx hardhat console --network hardhat
 npx hardhat accounts
 npx hardhat compile
 npx hardhat clean
