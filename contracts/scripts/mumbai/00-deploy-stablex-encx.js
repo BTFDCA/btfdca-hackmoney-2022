@@ -13,8 +13,8 @@ async function main() {
     process.env.MUMBAI_SF_HOST, // host
     process.env.MUMBAI_SF_CFA, // cfa
     process.env.MUMBAI_SF_IDA, // ida
-    1, // ida index
-    process.env.MUMBAI_FDAIX, // source token
+    process.env.MUMBAI_IDX_STABLEX_ENCX, // ida index
+    process.env.MUMBAI_STABLEX, // source token
     process.env.MUMBAI_ENCX, // target token
     "", // registration key
     process.env.MUMBAI_UNISWAP_ROUTER, // uniswap router

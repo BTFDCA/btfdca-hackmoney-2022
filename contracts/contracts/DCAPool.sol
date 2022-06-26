@@ -7,6 +7,7 @@ import {IConstantFlowAgreementV1} from "@superfluid-finance/ethereum-contracts/c
 import {IInstantDistributionAgreementV1} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IInstantDistributionAgreementV1.sol";
 import {ISuperAgreement, SuperAppDefinitions, ISuperfluid, ISuperToken} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "hardhat/console.sol";
@@ -15,6 +16,7 @@ import {SfDCAPool} from "./SuperfluidDCAPool.sol";
 
 contract DCAPool is SfDCAPool {
     using IDAv1Library for IDAv1Library.InitData;
+    using SafeERC20 for ERC20;
 
     struct DCAPoolConfig {
         uint256 buyCadence; // the regular cadence to buy
@@ -129,7 +131,7 @@ contract DCAPool is SfDCAPool {
 
     // withdraw erc20 tokens - TODO: onlyRole?
     function withdrawTokens(address tokenAddr) external {
-        IERC20 token = IERC20(tokenAddr);
+        ERC20 token = ERC20(tokenAddr);
         uint256 tokenBalance = token.balanceOf(address(this));
 
         bool success = token.transfer(msg.sender, tokenBalance);
@@ -279,12 +281,20 @@ contract DCAPool is SfDCAPool {
             decodedContext.msgSender,
             address(this)
         );
+        console.log("get flow rate", uint256(int256(flowrate)));
+        console.log("last updated ts", lastUpdatedTimestamp);
+
         uint256 ts = lastUpdatedTimestamp > _poolConfig.lastBuyTimestamp
             ? lastUpdatedTimestamp
             : _poolConfig.lastBuyTimestamp;
+        console.log("real timestamp", ts);
 
         // TODO: hmmm.. is this correct?
+        // THIS DID NOT EXECUTE, PROBABLY BECAUSE FLOWRATE IS 0?
         uint256 amount = uint256(uint96(flowrate)) * (block.timestamp - ts);
+        console.log("leftover amount?", amount);
+
+        // TODO: && amount > 0
         if (flowrate >= _poolConfig.minInvestableAmount) {
             bool transferred = _sourceToken.transferFrom(
                 address(this),
@@ -352,7 +362,14 @@ contract DCAPool is SfDCAPool {
         // distribute the swapped tokens to the investors, if it's above the distribution threshold
         console.log("give back ser!", amountIn);
         if (amountIn >= _poolConfig.minAmountToDistribute) {
+            console.log("approving the spend for the upgrade");
+            ERC20(inTokenAddr).safeIncreaseAllowance(
+                address(_targetToken),
+                amountIn
+            );
+
             // gotta convert into a supertoken
+            console.log("upgrading the swapped amount to supertoken");
             // TODO: REX is doing: amountIn * (10 ** (18 - ERC20(inTokenAddr).decimals()));
             _targetToken.upgrade(amountIn);
 

@@ -16,16 +16,10 @@ async function main() {
 
   // do something just to check that the contract is fetched
   console.log("just some call to check if we fetched the correct instance");
-  let ret = await dcaContract._poolConfig();
+  const ret = await dcaContract.withdrawTokens(
+    "0x358b34D52675C6D8B9b932015662625292e1Fd12" // STABLEX
+  );
   console.log("some return value", ret);
-
-  ret = await dcaContract._uniswapPoolFee();
-  console.log("some return value", ret);
-
-  // call DCA's buyAndDistribute
-  console.log("let's activate the swap and return the output to the investors");
-  ret = await dcaContract.connect(signer).buyAndDistribute();
-  console.log("return value", ret);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

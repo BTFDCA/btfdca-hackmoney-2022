@@ -13,9 +13,8 @@ npx hardhat run --network localhost scripts/local/02-buy-and-distribute.js
 ## testing on polygon mumbai
 
 ```shell
-npx hardhat run --network mumbai scripts/mumbai/00-deploy-fdaix-ethgx.js
-npx hardhat run --network mumbai scripts/mumbai/00-deploy-fdaix-encx.js
-npx hardhat run --network mumbai scripts/mumbai/00-deploy-fdaix-btfdcax.js
+npx hardhat run --network mumbai scripts/mumbai/00-deploy-stablex-encx.js
+npx hardhat run --network mumbai scripts/mumbai/00-deploy-stablex-btfdcax.js
 npx hardhat run --network mumbai scripts/mumbai/01-swap-tokens.js
 npx hardhat run --network mumbai scripts/mumbai/03-buy-and-distribute.js
 ```
