@@ -10,16 +10,16 @@ function Wallet({ chainId, account, connectWallet }) {
   return (
     <Box>
       {/* TODO: only show if not approved */}
-      <Container maxWidth="lg" sx={{ mt: 8 }}>
+      {/* <Container maxWidth="lg" sx={{ mt: 8 }}>
         <Typography variant="h6">
           ☑️ In order to get your moneyz, you have to approve the distribution
           👇🏻.
         </Typography>
-        {/* TODO: explain why */}
+        // explain why
         <SubscriptionApprover chainId={chainId} />
 
         <Divider sx={{ my: 8 }} />
-      </Container>
+      </Container> */}
 
       <Balances chainId={chainId} account={account} sx={{ my: 8 }} />
 

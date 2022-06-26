@@ -17,17 +17,17 @@ const headerText = {
 };
 
 function Header({ chainId, account }) {
-  const [fDaixBalance, setfDaixBalance] = useState("");
+  const [stablexBalance, setStablexBalance] = useState("");
 
   useEffect(() => {
     if (account) {
       console.log(
-        "fetching erc 20 balance",
-        ADDRESSES[chainId].ADDRESS_FDAIX,
+        "[header] stablex balance",
+        ADDRESSES[chainId].ADDRESS_STABLEX,
         account
       );
-      getErc20Balance(ADDRESSES[chainId].ADDRESS_FDAIX, account).then((v) => {
-        setfDaixBalance(v);
+      getErc20Balance(ADDRESSES[chainId].ADDRESS_STABLEX, account).then((v) => {
+        setStablexBalance(v);
       });
     }
   }, [chainId, account]);
@@ -121,7 +121,7 @@ function Header({ chainId, account }) {
                   component="span"
                   sx={headerText}
                 >
-                  fDAIx Balance: {fDaixBalance}
+                  STABLEx Balance: {stablexBalance}
                 </Typography>
               </>
             ) : (

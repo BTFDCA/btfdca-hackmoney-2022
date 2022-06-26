@@ -40,7 +40,7 @@ function Success({ chainId, account, connectWallet }) {
   // useEffect(() => {
   //   console.log("[success] account", account);
   //   if (account) {
-  //     getClaimDetails(account, ADDRESSES[chainId].ADDRESS_ETHGX).then(
+  //     getClaimDetails(account, ADDRESSES[chainId].ADDRESS_TARGET_TOKEN).then(
   //       (subscription) => {
   //         console.log("[success] subscription in use effect", subscription);
   //         setClaimStatus(true);

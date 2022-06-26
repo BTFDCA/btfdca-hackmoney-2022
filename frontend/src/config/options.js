@@ -1,16 +1,16 @@
 import { getErc20Balance } from "../helpers/balances";
 
-// TODO: these values should be loaded based on the network
-// i.e. getAvailableSourceTokens(chainId)
+// TODO: everything should be loaded based on the network
 
 import { ADDRESSES } from "./constants";
 
 const getSourceTokenOptions = (chainId) => {
-  return [{ id: 0, label: "FDAIx", value: ADDRESSES[chainId].ADDRESS_FDAIX }];
+  return [
+    { id: 0, label: "STABLEx", value: ADDRESSES[chainId].ADDRESS_STABLEX },
+  ];
 };
 
 const getTargetTokenOptions = (chainId) => {
-  // return [{ id: 0, label: "ETHGx", value: ADDRESSES[chainId].ADDRESS_ETHGX }];
   return [
     { id: 1, label: "ENCx", value: ADDRESSES[chainId].ADDRESS_ENCX },
     { id: 2, label: "BTFDCAx", value: ADDRESSES[chainId].ADDRESS_BTFDCAX },
@@ -18,13 +18,12 @@ const getTargetTokenOptions = (chainId) => {
 };
 
 const getUpgradableTokens = (chainId) => {
-  // TODO: get these values from the network
   return [
     {
-      label: "FDAI",
+      label: "STABLE",
       value: 0,
-      address: ADDRESSES[chainId].ADDRESS_FDAI,
-      upgradeTo: ADDRESSES[chainId].ADDRESS_FDAIX,
+      address: ADDRESSES[chainId].ADDRESS_STABLE,
+      upgradeTo: ADDRESSES[chainId].ADDRESS_STABLEX,
     },
     {
       label: "ENC",
@@ -38,22 +37,15 @@ const getUpgradableTokens = (chainId) => {
       address: ADDRESSES[chainId].ADDRESS_BTFDCA,
       upgradeTo: ADDRESSES[chainId].ADDRESS_BTFDCAX,
     },
-    // {
-    //   label: "ETHG",
-    //   value: 3,
-    //   address: ADDRESSES[chainId].ADDRESS_ETHG,
-    //   upgradeTo: ADDRESSES[chainId].ADDRESS_ETHGX,
-    // },
   ];
 };
 
 const getDowgradableTokens = (chainId) => {
-  // TODO: get these values from the network
   return [
     {
-      label: "FDAIx",
+      label: "STABLEx",
       value: 1,
-      downgradeFrom: ADDRESSES[chainId].ADDRESS_FDAIX,
+      downgradeFrom: ADDRESSES[chainId].ADDRESS_STABLEX,
     },
     {
       label: "ENCx",
@@ -65,28 +57,22 @@ const getDowgradableTokens = (chainId) => {
       value: 2,
       downgradeFrom: ADDRESSES[chainId].ADDRESS_BTFDCAX,
     },
-    // {
-    //   label: "ETHGx",
-    //   value: 3,
-    //   address: ADDRESSES[chainId].ADDRESS_ETHGX,
-    // },
   ];
 };
 
 async function fetchBalances(chainId, account, onFetchComplete) {
-  // TODO: this should be more dynamic, by creating the structure based on getSource/TargetTokens
   const balances = [
     {
-      unwrappedTokenAddress: ADDRESSES[chainId].ADDRESS_FDAI,
-      unwrappedToken: "FDAI",
+      unwrappedTokenAddress: ADDRESSES[chainId].ADDRESS_STABLE,
+      unwrappedToken: "STABLE",
       unwrappedTokenBalance: await getErc20Balance(
-        ADDRESSES[chainId].ADDRESS_FDAI,
+        ADDRESSES[chainId].ADDRESS_STABLE,
         account
       ),
-      wrappedTokenAddress: ADDRESSES[chainId].ADDRESS_FDAIX,
-      wrappedToken: "FDAIx",
+      wrappedTokenAddress: ADDRESSES[chainId].ADDRESS_STABLEX,
+      wrappedToken: "STABLEx",
       wrappedTokenBalance: await getErc20Balance(
-        ADDRESSES[chainId].ADDRESS_FDAIX,
+        ADDRESSES[chainId].ADDRESS_STABLEX,
         account
       ),
     },
@@ -118,20 +104,6 @@ async function fetchBalances(chainId, account, onFetchComplete) {
         account
       ),
     },
-    // {
-    //   unwrappedTokenAddress: ADDRESSES[chainId].ADDRESS_ETHGX,
-    //   unwrappedToken: "ETHGx",
-    //   unwrappedTokenBalance: await getErc20Balance(
-    //     ADDRESSES[chainId].ADDRESS_ETHGX,
-    //     account
-    //   ),
-    //   wrappedTokenAddress: ADDRESSES[chainId].ADDRESS_ETHGX,
-    //   wrappedToken: "ETHGx",
-    //   wrappedTokenBalance: await getErc20Balance(
-    //     ADDRESSES[chainId].ADDRESS_ETHGX,
-    //     account
-    //   ),
-    // },
   ];
 
   onFetchComplete(balances);
@@ -139,28 +111,22 @@ async function fetchBalances(chainId, account, onFetchComplete) {
 
 const getDcaPoolContracts = (chainId) => {
   return {
-    "FDAIx/ENCx": ADDRESSES[chainId].ADDRESS_DCA_FDAIX_ENCX,
-    "FDAIx/BTFDCAx": ADDRESSES[chainId].ADDRESS_DCA_FDAIX_BTFDCAX,
-    // "FDAIx/ETHGx": ADDRESSES[chainId].ADDRESS_DCA_FDAIX_ETHGX,
+    "STABLEx/ENCx": ADDRESSES[chainId].ADDRESS_DCA_STABLEX_ENCX,
+    "STABLEx/BTFDCAx": ADDRESSES[chainId].ADDRESS_DCA_STABLEX_BTFDCAX,
   };
 };
 
 const getDcaPoolContract = (chainId, sourceTokenAddr, targetTokenAddr) => {
-  // if (
-  //   sourceTokenAddr === ADDRESSES[chainId].ADDRESS_FDAIX &&
-  //   targetTokenAddr === ADDRESSES[chainId].ADDRESS_ETHGX
-  // )
-  //   return ADDRESSES[chainId].ADDRESS_DCA_FDAIX_ETHGX;
   if (
-    sourceTokenAddr === ADDRESSES[chainId].ADDRESS_FDAIX &&
+    sourceTokenAddr === ADDRESSES[chainId].ADDRESS_STABLEX &&
     targetTokenAddr === ADDRESSES[chainId].ADDRESS_ENCX
   )
-    return ADDRESSES[chainId].ADDRESS_DCA_FDAIX_ENCX;
+    return ADDRESSES[chainId].ADDRESS_DCA_STABLEX_ENCX;
   if (
-    sourceTokenAddr === ADDRESSES[chainId].ADDRESS_FDAIX &&
+    sourceTokenAddr === ADDRESSES[chainId].ADDRESS_STABLEX &&
     targetTokenAddr === ADDRESSES[chainId].ADDRESS_BTFDCAX
   )
-    return ADDRESSES[chainId].ADDRESS_DCA_FDAIX_BTFDCAX;
+    return ADDRESSES[chainId].ADDRESS_DCA_STABLEX_BTFDCAX;
 };
 
 export {

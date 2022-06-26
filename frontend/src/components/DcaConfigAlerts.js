@@ -9,7 +9,7 @@ const alertStyle = {
 function DcaConfigAlerts({
   buyAmount,
   requiredAmount,
-  fDaixBalance,
+  stablexBalance,
   srcToken,
   dcaError,
 }) {
@@ -36,7 +36,7 @@ function DcaConfigAlerts({
         </Alert>
       ) : srcToken && buyAmount > 0 ? (
         // not enough balance
-        requiredAmount > fDaixBalance ? (
+        requiredAmount > stablexBalance ? (
           <Alert variant="filled" severity="error" sx={alertStyle}>
             <AlertTitle>You don't have enough moneyz.</AlertTitle>
             <div>

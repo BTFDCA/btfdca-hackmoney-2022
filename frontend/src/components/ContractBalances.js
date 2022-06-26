@@ -21,37 +21,45 @@ export default function ContractBalances({ chainId, pairName, contractAddr }) {
 
   return (
     <Box>
-      <Typography variant="h6" align="center" sx={{ mb: 4 }}>
-        Contract Balances ({pairName})
-      </Typography>
+      {balances ? (
+        <>
+          <Typography variant="h6" align="center" sx={{ mb: 4 }}>
+            Contract Balances ({pairName})
+          </Typography>
 
-      <TableContainer component={Paper}>
-        <Table aria-label="simple table">
-          <TableHead>
-            <TableRow>
-              <TableCell align="left">Token Name</TableCell>
-              <TableCell align="right">Ticker</TableCell>
-              <TableCell align="right">Current Balance</TableCell>
-            </TableRow>
-          </TableHead>
+          <TableContainer component={Paper}>
+            <Table aria-label="simple table">
+              <TableHead>
+                <TableRow>
+                  <TableCell align="left">Token Name</TableCell>
+                  <TableCell align="right">Ticker</TableCell>
+                  <TableCell align="right">Current Balance</TableCell>
+                </TableRow>
+              </TableHead>
 
-          <TableBody>
-            {balances?.map((balance) => (
-              <TableRow
-                key={balance["address"]}
-                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-              >
-                <TableCell align="left">{balance["name"]}</TableCell>
-                {/* format with link to scan+balance["address"] */}
-                <TableCell align="right">{balance["ticker"]}</TableCell>
-                <TableCell align="right">
-                  {formatEther(BigNumber.from(balance["balance"]))}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              <TableBody>
+                {balances.map((balance) => (
+                  <TableRow
+                    key={balance["address"]}
+                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                  >
+                    <TableCell align="left">{balance["name"]}</TableCell>
+                    {/* format with link to scan+balance["address"] */}
+                    <TableCell align="right">{balance["ticker"]}</TableCell>
+                    <TableCell align="right">
+                      {parseFloat(
+                        formatEther(BigNumber.from(balance["balance"]))
+                      ).toFixed(4)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
+      ) : (
+        <></>
+      )}
     </Box>
   );
 }

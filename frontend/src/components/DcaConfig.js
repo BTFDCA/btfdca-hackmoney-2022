@@ -33,8 +33,10 @@ async function createDCAFlow(amount, sourceToken, targetToken) {
 
   // start streaming the tokens from the user to the dca superapp contract
   try {
+    const contractAddr = getDcaPoolContract(chainId, sourceToken, targetToken);
+    console.log("[dcaconfig] super app", contractAddr);
     const createFlowOperation = sf.cfaV1.createFlow({
-      receiver: getDcaPoolContract(chainId, sourceToken, targetToken),
+      receiver: contractAddr,
       flowRate: flowRateInWei.toString(),
       superToken: sourceToken,
     });
@@ -76,7 +78,7 @@ function DcaConfig({ chainId, account, connectWallet }) {
   const [dcaError, setDcaError] = useState();
 
   const [requiredAmount, setRequiredAmount] = useState(0);
-  const [fDaixBalance, setfDaixBalance] = useState(0); // TODO: this must be changed to support multiple source tokens
+  const [stablexBalance, setStablexBalance] = useState(0); // TODO: this must be changed to support multiple source tokens
 
   // btn event handler
   const setupDCAFlow = async () => {
@@ -110,8 +112,8 @@ function DcaConfig({ chainId, account, connectWallet }) {
   // TODO: this should probably be moved, and have the balances passed down (or global)
   useEffect(() => {
     if (account) {
-      getErc20Balance(ADDRESSES[chainId].ADDRESS_FDAIX, account).then((v) => {
-        setfDaixBalance(parseFloat(v));
+      getErc20Balance(ADDRESSES[chainId].ADDRESS_STABLEX, account).then((v) => {
+        setStablexBalance(parseFloat(v));
       });
     }
   }, [chainId, account]);
@@ -153,10 +155,10 @@ function DcaConfig({ chainId, account, connectWallet }) {
       {/* TODO: show info about how much this is per week/month */}
 
       {/* alerts and errors */}
-      {account && srcToken && fDaixBalance && buyAmount ? (
+      {account && srcToken && stablexBalance && buyAmount ? (
         <DcaConfigAlerts
           srcToken={JSON.parse(srcToken)}
-          fDaixBalance={fDaixBalance}
+          stablexBalance={stablexBalance}
           buyAmount={buyAmount}
           requiredAmount={requiredAmount}
           dcaError={dcaError}
@@ -184,7 +186,7 @@ function DcaConfig({ chainId, account, connectWallet }) {
         <Button
           id="lfgButton"
           onClick={setupDCAFlow}
-          disabled={buyAmount <= 0 || fDaixBalance < requiredAmount}
+          disabled={buyAmount <= 0 || stablexBalance < requiredAmount}
           variant="contained"
           size="large"
           component="button"

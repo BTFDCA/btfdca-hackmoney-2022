@@ -87,7 +87,7 @@ function TokenUpgrader({ chainId }) {
         />
 
         {/* TODO: validate negative values, etc */}
-        {/* TODO: max button with fdai balance */}
+        {/* TODO: max button with the balance */}
         <TextField
           label="Amount"
           InputLabelProps={{ style: { color: "white" } }}

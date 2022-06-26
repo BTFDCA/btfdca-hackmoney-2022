@@ -22,7 +22,7 @@ npx hardhat run --network mumbai scripts/mumbai/03-buy-and-distribute.js
 ### network fork
 
 ```shell
-npx hardhat node --fork https://polygon-mumbai.g.alchemy.com/v2/9P0PsfcTEi-qha6LUTGMmBxVr_zqEhk1
+npx hardhat node --fork <node>
 npx hardhat run --network localhost scripts/local/00-deploy.js
 npx hardhat run --network localhost scripts/mumbai/01-swap-tokens.js
 npx hardhat run --network localhost scripts/mumbai/03-buy-and-distribute.js
