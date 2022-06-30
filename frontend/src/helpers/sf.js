@@ -1,6 +1,6 @@
 import { Framework } from "@superfluid-finance/sdk-core";
 import { ethers } from "ethers";
-import { ADDRESSES } from "../config/constants";
+import { getSuperfluidResolverAddress } from "../config/options";
 
 async function getSignerAndFramework() {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -14,7 +14,7 @@ async function getSignerAndFramework() {
     chainId: chainId,
     provider: provider,
     customSubgraphQueriesEndpoint: "",
-    resolverAddress: ADDRESSES[chainId].ADDRESS_SUPERFLUID_RESOLVER,
+    resolverAddress: getSuperfluidResolverAddress(chainId),
     // dataMode: "WEB3_ONLY",
     // protocolReleaseVersion: "test",
   });

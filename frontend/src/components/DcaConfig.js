@@ -9,8 +9,11 @@ import DcaConfigAlerts from "./DcaConfigAlerts";
 import Button from "./mui/Button";
 import Typography from "./mui/Typography";
 
-import { getDcaPoolContract, getTargetTokenOptions } from "../config/options";
-import { ADDRESSES } from "../config/constants";
+import {
+  getDcaPoolContract,
+  getStablexAddress,
+  getTargetTokenOptions,
+} from "../config/options";
 import { getSignerAndFramework } from "../helpers/sf";
 import { getErc20Balance } from "../helpers/balances";
 import DcaSourceToken from "./DcaSourceToken";
@@ -109,10 +112,11 @@ function DcaConfig({ chainId, account, connectWallet }) {
     setRequiredAmount(req);
   }, [buyAmount]);
 
-  // TODO: this should probably be moved, and have the balances passed down (or global)
+  // TODO: this should be moved, and have the balances passed down (or global)
   useEffect(() => {
     if (account) {
-      getErc20Balance(ADDRESSES[chainId].ADDRESS_STABLEX, account).then((v) => {
+      // TODO: this should be "getSourceTokenBalances"
+      getErc20Balance(getStablexAddress(chainId), account).then((v) => {
         setStablexBalance(parseFloat(v));
       });
     }

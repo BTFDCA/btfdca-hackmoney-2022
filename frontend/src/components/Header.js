@@ -20,12 +20,8 @@ function Header({ chainId, account }) {
   const [stablexBalance, setStablexBalance] = useState("");
 
   useEffect(() => {
-    if (account) {
-      console.log(
-        "[header] stablex balance",
-        ADDRESSES[chainId].ADDRESS_STABLEX,
-        account
-      );
+    // TODO: yeah, not like this
+    if (account && chainId in ADDRESSES) {
       getErc20Balance(ADDRESSES[chainId].ADDRESS_STABLEX, account).then((v) => {
         setStablexBalance(v);
       });

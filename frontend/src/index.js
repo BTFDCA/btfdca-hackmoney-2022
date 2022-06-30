@@ -15,13 +15,15 @@ import Footer from "./components/Footer";
 import theme from "./styles/theme";
 import "./styles/index.css";
 import Stats from "./pages/Stats";
+import { Box } from "@mui/material";
+import Typography from "./components/mui/Typography";
 
 const container = document.getElementById("root");
 const root = createRoot(container);
 
 function App() {
   const [account, setAccount] = useState("");
-  const [chainId, setChainId] = useState(80001);
+  const [chainId, setChainId] = useState();
 
   const connectWallet = async () => {
     try {
@@ -78,44 +80,62 @@ function App() {
       <Header chainId={chainId} account={account} />
 
       <div>
-        <BrowserRouter>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <Main
-                  chainId={chainId}
-                  account={account}
-                  connectWallet={connectWallet}
-                />
-              }
-            />
-            <Route
-              path="/stats"
-              element={<Stats chainId={chainId} account={account} />}
-            />
-            <Route
-              path="/wallet"
-              element={
-                <Wallet
-                  chainId={chainId}
-                  account={account}
-                  connectWallet={connectWallet}
-                />
-              }
-            />
-            <Route
-              path="/success"
-              element={
-                <Success
-                  chainId={chainId}
-                  account={account}
-                  connectWallet={connectWallet}
-                />
-              }
-            />
-          </Routes>
-        </BrowserRouter>
+        {chainId === 80001 ? (
+          <BrowserRouter>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <Main
+                    chainId={chainId}
+                    account={account}
+                    connectWallet={connectWallet}
+                  />
+                }
+              />
+              <Route
+                path="/stats"
+                element={<Stats chainId={chainId} account={account} />}
+              />
+              <Route
+                path="/wallet"
+                element={
+                  <Wallet
+                    chainId={chainId}
+                    account={account}
+                    connectWallet={connectWallet}
+                  />
+                }
+              />
+              <Route
+                path="/success"
+                element={
+                  <Success
+                    chainId={chainId}
+                    account={account}
+                    connectWallet={connectWallet}
+                  />
+                }
+              />
+            </Routes>
+          </BrowserRouter>
+        ) : (
+          <Box
+            component="section"
+            sx={{
+              minHeight: "100vh",
+              bgcolor: "#7fc7d9", // Average color of the background image.
+              alignItems: "center",
+              margin: "auto",
+              textAlign: "center",
+              p: 5,
+            }}
+          >
+            <Typography variant="h2">
+              Please connect to Polygon mumbai
+            </Typography>
+          </Box>
+        )}
       </div>
 
       <Footer chainId={chainId} />

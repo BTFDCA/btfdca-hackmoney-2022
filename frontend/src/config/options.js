@@ -4,6 +4,14 @@ import { getErc20Balance } from "../helpers/balances";
 
 import { ADDRESSES } from "./constants";
 
+const getSuperfluidResolverAddress = (chainId) => {
+  return ADDRESSES[chainId].ADDRESS_SUPERFLUID_RESOLVER;
+};
+
+const getStablexAddress = (chainId) => {
+  return ADDRESSES[chainId].ADDRESS_STABLEX;
+};
+
 const getSourceTokenOptions = (chainId) => {
   return [
     { id: 0, label: "STABLEx", value: ADDRESSES[chainId].ADDRESS_STABLEX },
@@ -137,4 +145,6 @@ export {
   fetchBalances,
   getDcaPoolContracts,
   getDcaPoolContract,
+  getSuperfluidResolverAddress,
+  getStablexAddress,
 };
