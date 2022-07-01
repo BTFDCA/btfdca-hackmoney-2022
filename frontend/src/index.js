@@ -63,10 +63,10 @@ function App() {
       const account = accounts[0];
       console.log("[init] found an authorized account", account, chainId);
       setAccount(account);
-      setChainId(chainId);
     } else {
       console.log("[init] no authorized account found");
     }
+    setChainId(chainId);
   };
 
   useEffect(() => {
